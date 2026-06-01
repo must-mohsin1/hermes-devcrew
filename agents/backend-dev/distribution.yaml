@@ -2,7 +2,7 @@
 # A Hermes profile distribution. Install with:
 #   hermes profile install ./agents/backend-dev --yes
 name: devcrew-backend-dev
-version: 0.1.0
+version: 0.2.0
 description: "Backend implementation specialist — APIs, data layer, services, and tests."
 hermes_requires: ">=0.12.0"
 author: "hermes-devcrew"

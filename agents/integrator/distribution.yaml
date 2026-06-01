@@ -2,7 +2,7 @@
 # A Hermes profile distribution. Install with:
 #   hermes profile install ./agents/integrator --yes
 name: devcrew-integrator
-version: 0.1.0
+version: 0.2.0
 description: "Integrator/synthesizer — merges verified work into one coherent deliverable."
 hermes_requires: ">=0.12.0"
 author: "hermes-devcrew"

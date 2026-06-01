@@ -2,7 +2,7 @@
 # A Hermes profile distribution. Install with:
 #   hermes profile install ./agents/frontend-dev --yes
 name: devcrew-frontend-dev
-version: 0.1.1
+version: 0.2.0
 description: "Frontend implementation specialist — UI, components, state, and accessibility."
 hermes_requires: ">=0.12.0"
 author: "hermes-devcrew"

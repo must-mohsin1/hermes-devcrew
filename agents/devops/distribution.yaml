@@ -2,7 +2,7 @@
 # A Hermes profile distribution. Install with:
 #   hermes profile install ./agents/devops --yes
 name: devcrew-devops
-version: 0.1.0
+version: 0.2.0
 description: "DevOps specialist — containers, CI/CD, deploys, and observability."
 hermes_requires: ">=0.12.0"
 author: "hermes-devcrew"

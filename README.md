@@ -44,6 +44,27 @@ keys they need (`OPENROUTER_API_KEY`), and you supply your own.
 
 ---
 
+## What each agent knows (bundled skills)
+
+Every agent ships a curated, **always-available** skill toolkit — 30 skills total, no registry
+needed (they travel with the distribution):
+
+| Agent | Skills |
+|-------|--------|
+| **architect** | `decompose-goal` · `write-spec` · `writing-plans` · `spike` · `subagent-driven-development` |
+| **backend-dev** | `ship-backend-change` · `test-driven-development` · `systematic-debugging` · `rest-graphql-debug` · `python-debugpy` · `node-inspect-debugger` · `verification-before-completion` |
+| **frontend-dev** | `ship-frontend-change` · `web-development` · `frontend-design` · `page-agent` · `verification-before-completion` |
+| **devops** | `safe-change-and-deploy` · `docker-management` · `verification-before-completion` |
+| **reviewer** | `adversarial-review` · `github-code-review` · `web-pentest` |
+| **integrator** | `integrate-and-synthesize` · `github-pr-workflow` · `github-repo-management` |
+| **domain-expert** | `onboard-to-codebase` · `codebase-research` · `code-wiki` · `codebase-inspection` |
+
+Some skills are bundled/adapted from the [Hermes Agent](https://hermes-agent.nousresearch.com)
+library and the [superpowers](https://github.com/obra/superpowers) project (MIT) — see
+[`NOTICE`](NOTICE). Each `SKILL.md` carries its own license/attribution.
+
+---
+
 ## Install
 
 **Prerequisites:** [Hermes](https://hermes-agent.nousresearch.com/docs/) (`>= 0.12.0`), `git`,

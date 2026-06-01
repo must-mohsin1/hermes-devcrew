@@ -1,0 +1,21 @@
+hermes-devcrew
+Copyright (c) 2026 hermes-devcrew contributors
+
+This product bundles agent skills under agents/*/skills/.
+
+- Skills authored by hermes-devcrew are licensed MIT (see LICENSE):
+  decompose-goal, write-spec, ship-backend-change, ship-frontend-change,
+  web-development, frontend-design, safe-change-and-deploy, adversarial-review,
+  integrate-and-synthesize, onboard-to-codebase, codebase-research,
+  verification-before-completion.
+
+- Several skills are bundled or adapted from the Hermes Agent skill library
+  (https://hermes-agent.nousresearch.com) and the superpowers project
+  (https://github.com/obra/superpowers), each under the MIT License:
+  test-driven-development, systematic-debugging, writing-plans, spike,
+  subagent-driven-development, python-debugpy, node-inspect-debugger,
+  rest-graphql-debug, code-wiki, codebase-inspection, github-code-review,
+  github-pr-workflow, github-repo-management, docker-management, web-pentest,
+  page-agent.
+
+Every bundled SKILL.md retains its own `license` and `author` metadata.
