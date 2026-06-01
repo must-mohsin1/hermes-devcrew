@@ -14,6 +14,16 @@ machine, against your repo, with your own API key.
 It's not a framework or a fork. Each agent is a real Hermes **profile distribution**; the crew
 coordinates through Hermes' built-in **kanban swarm** and **dispatcher daemon**.
 
+> **⚡ Quick install** — [Hermes](https://hermes-agent.nousresearch.com/docs/) + an OpenRouter key, then:
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/must-mohsin1/hermes-devcrew/main/install.sh | bash
+> devcrew-run "Add a feature with tests" /path/to/repo
+> ```
+> *(full guide [below ↓](#install))*
+>
+> **Want research + planning, not just building?** This is the *build* team. For the full
+> **research → plan → approve → build** org on top of it, see **[dev-os →](https://github.com/must-mohsin1/dev-os)**.
+
 ---
 
 ## How it works
