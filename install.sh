@@ -114,6 +114,8 @@ for d in $AGENT_DIRS; do
     reviewer)      desc="Verifier: adversarial review for correctness and security; the quality gate before integration." ;;
     integrator)    desc="Synthesizer: merges verified work into one coherent deliverable, resolves conflicts, writes PR/docs." ;;
     domain-expert) desc="Project specialist: deep knowledge of this codebase's conventions, invariants, and gotchas. Customizable." ;;
+    qa)            desc="QA specialist: runs the app, finds reproducible bugs, benchmarks performance, watches deploys. Dynamic verification gate." ;;
+    designer)      desc="Design specialist: owns the design system, UX, accessibility, and UI critique; produces specs and copy for frontend-dev." ;;
     *)             desc="" ;;
   esac
   [ -n "$desc" ] && hermes profile describe "$name" --text "$desc" >/dev/null 2>&1 || true

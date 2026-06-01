@@ -62,7 +62,7 @@ if [ "$MODE" = swarm ]; then
     --verifier "$VERIFIER" --synthesizer "$SYNTH"
 else
   say "Briefing $ANCHOR to decompose the goal onto board '$BOARD'"
-  hermes -p "$ANCHOR" --yolo -z "Plan and execute on the kanban board '$BOARD'. GOAL: ${GOAL}.${REPO_ABS:+ Working repo: ${REPO_ABS}.} Decompose into small, verifiable tasks ON THE BOARD (hermes kanban create/link), each assigned to the right specialist: devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, or devcrew-domain-expert — with acceptance criteria and dependencies. devcrew-reviewer verifies each task; devcrew-integrator synthesizes the result. Create the tasks now; do NOT implement them yourself."
+  hermes -p "$ANCHOR" --yolo -z "Plan and execute on the kanban board '$BOARD'. GOAL: ${GOAL}.${REPO_ABS:+ Working repo: ${REPO_ABS}.} Decompose into small, verifiable tasks ON THE BOARD (hermes kanban create/link), each assigned to the right specialist: devcrew-designer (UI/UX specs), devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, or devcrew-domain-expert — with acceptance criteria and dependencies. devcrew-reviewer verifies code statically and devcrew-qa tests dynamically after implementation; devcrew-integrator synthesizes the result. Create the tasks now; do NOT implement them yourself."
 fi
 
 if [ "$DAEMON" = "1" ]; then

@@ -2,7 +2,7 @@
 
 **An autonomous, hybrid software-engineering team you install in one command.**
 
-`hermes-devcrew` is a packaged team of seven domain-expert agents for the
+`hermes-devcrew` is a packaged team of nine domain-expert agents for the
 [Hermes Agent](https://hermes-agent.nousresearch.com) platform. Give it a goal; the crew plans
 it, builds it in parallel, reviews itself, and synthesizes the result — autonomously, on your
 machine, against your repo, with your own API key.
@@ -41,13 +41,15 @@ keys they need (`OPENROUTER_API_KEY`), and you supply your own.
 | **reviewer** | **verifier** | Adversarial correctness + security gate before anything merges | `deepseek/deepseek-v3.2` |
 | **integrator** | **synthesizer** | Merges verified work into one coherent, green deliverable | `deepseek/deepseek-v3.2` |
 | **domain-expert** | worker | **Customizable** specialist that learns *your* codebase | `mistralai/codestral-2508` |
+| **qa** | **dynamic verifier** | Runs the app — finds bugs w/ repro steps, benchmarks, watches deploys | `deepseek/deepseek-v3.2` |
+| **designer** | UI/UX (upstream) | Owns the design system, UX, accessibility, and copy; specs for frontend-dev | `deepseek/deepseek-v3.2` |
 
 ---
 
 ## What each agent knows (bundled skills)
 
-Every agent ships a curated, **always-available** skill toolkit — 30 skills total, no registry
-needed (they travel with the distribution):
+Every agent ships a curated, **always-available** skill toolkit — no registry needed; they
+travel with the distribution (40 skills total across 9 agents):
 
 | Agent | Skills |
 |-------|--------|
@@ -58,6 +60,8 @@ needed (they travel with the distribution):
 | **reviewer** | `adversarial-review` · `github-code-review` · `web-pentest` |
 | **integrator** | `integrate-and-synthesize` · `github-pr-workflow` · `github-repo-management` |
 | **domain-expert** | `onboard-to-codebase` · `codebase-research` · `code-wiki` · `codebase-inspection` |
+| **qa** | `qa-testing` · `performance-benchmark` · `post-deploy-canary` · `page-agent` · `verification-before-completion` |
+| **designer** | `design-system` · `design-critique` · `accessibility-review` · `ux-copy` · `frontend-design` |
 
 Some skills are bundled/adapted from the [Hermes Agent](https://hermes-agent.nousresearch.com)
 library and the [superpowers](https://github.com/obra/superpowers) project (MIT) — see

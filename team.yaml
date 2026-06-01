@@ -2,7 +2,7 @@
 # Human-readable reference. The installer derives what it needs from agents/*/distribution.yaml,
 # so this file is the single place to *see* the whole team at a glance.
 name: hermes-devcrew
-version: 0.1.0
+version: 0.3.0
 description: An autonomous, hybrid software-engineering team for the Hermes agent platform.
 license: MIT
 
@@ -20,12 +20,17 @@ agents:
   - { name: devcrew-reviewer,      dir: agents/reviewer,      swarm_role: verifier,    tier: strong, model: deepseek/deepseek-v3.2 }
   - { name: devcrew-integrator,    dir: agents/integrator,    swarm_role: synthesizer, tier: strong, model: deepseek/deepseek-v3.2 }
   - { name: devcrew-domain-expert, dir: agents/domain-expert, swarm_role: worker,      tier: coder,  model: mistralai/codestral-2508 }
+  - { name: devcrew-qa,            dir: agents/qa,            swarm_role: dynamic-verifier, tier: strong, model: deepseek/deepseek-v3.2 }
+  - { name: devcrew-designer,      dir: agents/designer,      swarm_role: designer,        tier: strong, model: deepseek/deepseek-v3.2 }
 
-# Default swarm topology: parallel workers → verifier → synthesizer.
+# Default topology: designer (upstream) → parallel workers → reviewer (static gate)
+# + qa (dynamic gate, runs the app) → integrator (synthesizer).
 swarm:
-  anchor:      devcrew-architect
-  workers:     [devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, devcrew-domain-expert]
-  verifier:    devcrew-reviewer
-  synthesizer: devcrew-integrator
+  anchor:           devcrew-architect
+  designer:         devcrew-designer   # upstream of frontend-dev: UI/UX specs
+  workers:          [devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, devcrew-domain-expert]
+  verifier:         devcrew-reviewer   # static: reads the code
+  dynamic_verifier: devcrew-qa         # runtime: runs the app, after implementation
+  synthesizer:      devcrew-integrator
 
 board: devcrew

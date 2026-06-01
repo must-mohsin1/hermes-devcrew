@@ -1,0 +1,17 @@
+# hermes-devcrew :: qa
+# A Hermes profile distribution. Install with:
+#   hermes profile install ./agents/qa --yes
+name: devcrew-qa
+version: 0.1.0
+description: "QA specialist — runs the app, finds bugs with repro steps, benchmarks performance, and watches deploys (dynamic verification gate)."
+hermes_requires: ">=0.12.0"
+author: "hermes-devcrew"
+license: "MIT"
+env_requires:
+  - name: OPENROUTER_API_KEY
+    description: "OpenRouter API key — powers this agent's model"
+    required: true
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills

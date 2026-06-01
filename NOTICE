@@ -7,7 +7,8 @@ This product bundles agent skills under agents/*/skills/.
   decompose-goal, write-spec, ship-backend-change, ship-frontend-change,
   web-development, frontend-design, safe-change-and-deploy, adversarial-review,
   integrate-and-synthesize, onboard-to-codebase, codebase-research,
-  verification-before-completion.
+  verification-before-completion, qa-testing, performance-benchmark,
+  post-deploy-canary, design-system, design-critique, accessibility-review, ux-copy.
 
 - Several skills are bundled or adapted from the Hermes Agent skill library
   (https://hermes-agent.nousresearch.com) and the superpowers project

@@ -1,0 +1,17 @@
+# hermes-devcrew :: designer
+# A Hermes profile distribution. Install with:
+#   hermes profile install ./agents/designer --yes
+name: devcrew-designer
+version: 0.1.0
+description: "Design specialist — owns the design system, UX, accessibility, and UI critique; produces specs and copy for frontend-dev."
+hermes_requires: ">=0.12.0"
+author: "hermes-devcrew"
+license: "MIT"
+env_requires:
+  - name: OPENROUTER_API_KEY
+    description: "OpenRouter API key — powers this agent's model"
+    required: true
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
