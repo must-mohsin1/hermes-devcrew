@@ -51,12 +51,12 @@ and an [OpenRouter](https://openrouter.ai) API key.
 
 ```bash
 # clone + install (recommended while iterating)
-git clone https://github.com/REPLACE-ME/hermes-devcrew
+git clone https://github.com/must-mohsin1/hermes-devcrew
 cd hermes-devcrew
 ./install.sh
 
 # or, once published, one line:
-curl -fsSL https://raw.githubusercontent.com/REPLACE-ME/hermes-devcrew/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/must-mohsin1/hermes-devcrew/main/install.sh | bash
 ```
 
 The installer is idempotent. Useful flags / env:

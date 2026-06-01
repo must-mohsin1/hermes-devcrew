@@ -16,7 +16,7 @@
 #   HERMES_HOME          Hermes root (default: ~/.hermes)
 set -euo pipefail
 
-DEVCREW_REPO="${DEVCREW_REPO:-https://github.com/REPLACE-ME/hermes-devcrew}"
+DEVCREW_REPO="${DEVCREW_REPO:-https://github.com/must-mohsin1/hermes-devcrew}"
 BOARD="${DEVCREW_BOARD:-devcrew}"
 MIN_HERMES="0.12.0"
 WITH_SKILL_PACKS=0
