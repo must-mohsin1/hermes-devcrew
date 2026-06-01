@@ -2,6 +2,10 @@
 
 **An autonomous, hybrid software-engineering team you install in one command.**
 
+<p align="center">
+  <img src="docs/media/demo.gif" alt="hermes-devcrew: one command fans a goal across the kanban swarm — designer, workers, reviewer, QA, integrator" width="100%">
+</p>
+
 `hermes-devcrew` is a packaged team of nine domain-expert agents for the
 [Hermes Agent](https://hermes-agent.nousresearch.com) platform. Give it a goal; the crew plans
 it, builds it in parallel, reviews itself, and synthesizes the result — autonomously, on your
@@ -66,6 +70,18 @@ travel with the distribution (40 skills total across 9 agents):
 Some skills are bundled/adapted from the [Hermes Agent](https://hermes-agent.nousresearch.com)
 library and the [superpowers](https://github.com/obra/superpowers) project (MIT) — see
 [`NOTICE`](NOTICE). Each `SKILL.md` carries its own license/attribution.
+
+---
+
+## See it in action
+
+The animation above is the crew fanning a goal across the board. Here's a real artifact it produced
+**end-to-end** — an accessible profit-calculator widget that `designer` specced, `frontend-dev`
+built, and `qa` verified (logic + a11y + security) before `integrator` synthesized it:
+
+<p align="center">
+  <img src="docs/media/widget.png" alt="Munafa calculator widget — designed, built, and QA-verified by the crew" width="68%">
+</p>
 
 ---
 
