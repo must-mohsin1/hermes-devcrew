@@ -2,7 +2,7 @@
 # A Hermes profile distribution. Install with:
 #   hermes profile install ./agents/domain-expert --yes
 name: devcrew-domain-expert
-version: 0.1.0
+version: 0.1.1
 description: "Customizable domain specialist — adapt this agent to YOUR codebase and domain."
 hermes_requires: ">=0.12.0"
 author: "hermes-devcrew"

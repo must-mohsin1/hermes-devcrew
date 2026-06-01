@@ -102,19 +102,26 @@ done
 [ -n "$INSTALLED" ] || die "No agents installed."
 say "Installed:$INSTALLED"
 
-# --- 6) Optional standard skill packs (best effort) ------------------------
+# --- 6) Optional standard skill packs (best effort; bundled skills are the baseline) ---
+# Every agent already ships a bundled, always-available skill. These registry packs are a
+# best-effort enhancement — if a name isn't in the user's skill registry, we skip it quietly.
 if [ "$WITH_SKILL_PACKS" = "1" ]; then
   for d in $AGENT_DIRS; do
     role="$(basename "$d")"; name="devcrew-$role"
     case "$role" in
       architect|backend-dev|integrator) packs="software-development" ;;
+      frontend-dev)                      packs="web-development" ;;
       devops)                            packs="devops" ;;
       reviewer)                          packs="red-teaming software-development" ;;
+      domain-expert)                     packs="research" ;;
       *)                                 packs="" ;;
     esac
     for p in $packs; do
-      say "skills: $name += $p (best effort)"
-      hermes --profile "$name" skills install "$p" --yes >/dev/null 2>&1 || warn "  could not install $p"
+      if hermes --profile "$name" skills install "$p" --yes >/dev/null 2>&1; then
+        say "skills: $name += $p"
+      else
+        echo "  · skills: '$p' not in registry — $name uses its bundled skill (fine)"
+      fi
     done
   done
 fi
