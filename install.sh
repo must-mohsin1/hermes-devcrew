@@ -26,7 +26,7 @@ for a in "${@:-}"; do
   case "$a" in
     --with-skill-packs) WITH_SKILL_PACKS=1 ;;
     --daemon)           START_DAEMON=1 ;;
-    -h|--help)          grep '^#' "$0" | sed 's/^#\{1,\} \{0,1\}//'; exit 0 ;;
+    -h|--help)          grep '^#' "$0" | grep -v '^#!' | sed 's/^#\{1,\} \{0,1\}//'; exit 0 ;;
     "")                 ;;
     *)                  echo "unknown option: $a" >&2; exit 2 ;;
   esac
@@ -102,6 +102,23 @@ done
 [ -n "$INSTALLED" ] || die "No agents installed."
 say "Installed:$INSTALLED"
 
+# --- 5b) Orchestrator routing descriptions (consumed by the kanban orchestrator) ---
+say "Setting orchestrator descriptions"
+for d in $AGENT_DIRS; do
+  role="$(basename "$d")"; name="devcrew-$role"
+  case "$role" in
+    architect)     desc="Lead architect & decomposer: plans goals into verifiable task graphs, designs systems, sets acceptance criteria. Swarm anchor." ;;
+    backend-dev)   desc="Backend specialist: APIs, services, data models, business logic, backend tests (test-first)." ;;
+    frontend-dev)  desc="Frontend specialist: web UI, components, state, styling, forms, accessibility." ;;
+    devops)        desc="DevOps specialist: containers, CI/CD, infrastructure-as-code, deploys, observability (reversible, least-privilege)." ;;
+    reviewer)      desc="Verifier: adversarial review for correctness and security; the quality gate before integration." ;;
+    integrator)    desc="Synthesizer: merges verified work into one coherent deliverable, resolves conflicts, writes PR/docs." ;;
+    domain-expert) desc="Project specialist: deep knowledge of this codebase's conventions, invariants, and gotchas. Customizable." ;;
+    *)             desc="" ;;
+  esac
+  [ -n "$desc" ] && hermes profile describe "$name" --text "$desc" >/dev/null 2>&1 || true
+done
+
 # --- 6) Optional standard skill packs (best effort; bundled skills are the baseline) ---
 # Every agent already ships a bundled, always-available skill. These registry packs are a
 # best-effort enhancement — if a name isn't in the user's skill registry, we skip it quietly.
@@ -131,6 +148,17 @@ say "Initializing kanban board: $BOARD"
 hermes kanban init >/dev/null 2>&1 || true
 hermes kanban boards create "$BOARD" >/dev/null 2>&1 || true
 
+# --- 7b) Turnkey runner -----------------------------------------------------
+RUNNER="$SRC/devcrew-run"
+RUN_HINT="./devcrew-run"
+if [ -f "$RUNNER" ]; then
+  chmod +x "$RUNNER" 2>/dev/null || true
+  if [ -d "$HOME/.local/bin" ]; then
+    ln -sf "$RUNNER" "$HOME/.local/bin/devcrew-run" 2>/dev/null && RUN_HINT="devcrew-run" \
+      && say "Linked devcrew-run -> ~/.local/bin/devcrew-run"
+  fi
+fi
+
 # --- 8) Optional autonomous dispatcher -------------------------------------
 if [ "$START_DAEMON" = "1" ]; then
   say "Starting kanban dispatcher (autonomous mode)"
@@ -145,15 +173,16 @@ cat <<DONE
    Board:  $BOARD
 $([ -z "$KEY" ] && echo "   NOTE: no key set — run 'hermes --profile devcrew-architect auth add openrouter' before use." || true)
 
-Drive the crew — one-shot autonomous swarm:
-  hermes kanban swarm "Build <feature> in /path/to/repo" \\
-    --created-by devcrew-architect \\
-    --worker devcrew-backend-dev:"Implement <x>" \\
-    --worker devcrew-frontend-dev:"UI for <x>" \\
-    --verifier devcrew-reviewer --synthesizer devcrew-integrator
-  hermes kanban daemon     # execute the board autonomously (if not already running)
-  hermes kanban tail       # watch the crew work
+Drive the crew — one command:
+  $RUN_HINT "Add OAuth login to the API" /path/to/repo
+  hermes kanban tail        # watch the crew work
 
-Or brief the architect directly:
-  hermes --profile devcrew-architect -z "Plan and execute: <goal>"
+  ($RUN_HINT briefs the architect to decompose the goal onto the board, then
+   runs the dispatcher. Flags: --swarm (fixed parallel fan-out), --no-daemon (stage only).)
+
+Manual / advanced:
+  hermes kanban swarm "<goal>" --created-by devcrew-architect \\
+    --worker devcrew-backend-dev:"<task>" --verifier devcrew-reviewer \\
+    --synthesizer devcrew-integrator
+  hermes kanban daemon --verbose
 DONE

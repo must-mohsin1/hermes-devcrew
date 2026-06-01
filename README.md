@@ -73,23 +73,37 @@ The installer is idempotent. Useful flags / env:
 
 ## Drive the crew
 
+**One command** — the architect decomposes your goal onto the board, the dispatcher runs it, the
+reviewer gates each task, the integrator synthesizes:
+
 ```bash
-# One-shot autonomous swarm: workers run in parallel → reviewer verifies → integrator synthesizes
-hermes kanban swarm "Add OAuth login to ./myapp with tests" \
-  --created-by devcrew-architect \
-  --worker devcrew-backend-dev:"OAuth endpoints + session" \
-  --worker devcrew-frontend-dev:"Login UI" \
+devcrew-run "Add OAuth login to the API with tests" /path/to/repo
+hermes kanban tail        # watch the crew work
+```
+
+Flags: `--swarm` (fixed parallel fan-out across all workers), `--no-daemon` (stage tasks only),
+`--interval N` (dispatcher tick). `devcrew-run` is linked into `~/.local/bin` on install; otherwise
+run `./devcrew-run` from the repo.
+
+<details><summary>Manual / advanced control</summary>
+
+```bash
+# explicit swarm graph: workers in parallel → reviewer verifies → integrator synthesizes
+hermes kanban swarm "<goal>" --created-by devcrew-architect \
+  --worker devcrew-backend-dev:"<task>" --worker devcrew-frontend-dev:"<task>" \
   --verifier devcrew-reviewer --synthesizer devcrew-integrator
-
-hermes kanban daemon     # execute the board autonomously
-hermes kanban tail       # watch the crew work
+hermes kanban daemon --verbose --interval 30    # autonomous dispatch
+hermes kanban ls ; hermes kanban tail           # inspect / follow
 ```
+</details>
 
-Or just brief the architect and let it decompose:
+### Orchestration
 
-```bash
-hermes --profile devcrew-architect -z "Plan and execute: add OAuth to ./myapp"
-```
+The **kanban dispatcher** (`hermes kanban daemon`) is the runtime orchestrator: it promotes ready
+tasks, spawns each as its assigned profile in an isolated workspace, enforces dependencies, and
+auto-blocks after repeated failures (`--failure-limit`). The **architect** decomposes goals;
+auto-routing uses each profile's **description** (set at install). The topology — anchor → workers
+→ verifier → synthesizer — lives in [`team.yaml`](team.yaml) and is mirrored by `devcrew-run`.
 
 See [`docs/usage.md`](docs/usage.md) for manual task assignment, monitoring, cron routines, and
 per-agent model overrides.

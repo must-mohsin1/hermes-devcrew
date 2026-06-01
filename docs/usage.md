@@ -9,7 +9,20 @@ A practical guide to driving the crew after `./install.sh`.
 - The **dispatcher daemon** turns the board into autonomous execution.
 - A **swarm** is a ready-made graph: parallel workers → verifier → synthesizer.
 
-## 1. The fast path — one autonomous swarm
+## 0. One command (recommended)
+
+```bash
+devcrew-run "Add a CSV export endpoint with tests" /path/to/repo   # architect decomposes → daemon runs
+devcrew-run --swarm "Refactor billing" /path/to/repo               # fixed parallel fan-out
+devcrew-run --no-daemon "Investigate flaky tests"                  # stage tasks only
+hermes kanban tail                                                 # watch
+```
+
+`devcrew-run` mirrors the team topology in `team.yaml`, sets the board's working repo, briefs the
+architect to decompose the goal, then starts the dispatcher. It's linked into `~/.local/bin` at
+install (else run `./devcrew-run`).
+
+## 1. The fast path — explicit swarm
 
 ```bash
 hermes kanban swarm "Build a CSV export endpoint in ./api with tests" \

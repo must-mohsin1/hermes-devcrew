@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# devcrew-run — point the hermes-devcrew crew at a goal and let it run autonomously.
+#
+# Usage:
+#   devcrew-run "Add OAuth login to the API"            # architect decomposes, daemon runs it
+#   devcrew-run "Add OAuth" /path/to/repo               # work happens in that repo
+#   devcrew-run --swarm "Refactor billing" /path/repo   # fixed parallel fan-out (all workers)
+#   devcrew-run --no-daemon "..."                       # stage tasks but don't auto-run
+#   devcrew-run --interval 20 "..."                     # dispatcher tick (default 30s)
+#
+# Env: DEVCREW_BOARD (default: devcrew)
+#
+# Orchestration model: parallel workers -> verifier (reviewer) -> synthesizer (integrator),
+# dispatched by the Hermes kanban daemon. Topology below mirrors team.yaml.
+set -euo pipefail
+
+# --- topology (keep in sync with team.yaml) ---------------------------------
+ANCHOR=devcrew-architect
+WORKERS="devcrew-backend-dev devcrew-frontend-dev devcrew-devops devcrew-domain-expert"
+VERIFIER=devcrew-reviewer
+SYNTH=devcrew-integrator
+BOARD="${DEVCREW_BOARD:-devcrew}"
+
+MODE=architect; DAEMON=1; INTERVAL=30; POS=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --swarm)     MODE=swarm ;;
+    --no-daemon) DAEMON=0 ;;
+    --interval)  shift; INTERVAL="${1:-30}" ;;
+    -h|--help)   grep '^#' "$0" | grep -v '^#!' | sed 's/^#\{1,\} \{0,1\}//'; exit 0 ;;
+    --) shift; while [ $# -gt 0 ]; do POS+=("$1"); shift; done; break ;;
+    -*) echo "unknown option: $1" >&2; exit 2 ;;
+    *)  POS+=("$1") ;;
+  esac
+  shift
+done
+
+GOAL="${POS[0]:-}"; REPO="${POS[1]:-}"
+[ -n "$GOAL" ] || { echo 'usage: devcrew-run "<goal>" [repo]   (--swarm | --no-daemon | --interval N)'; exit 2; }
+command -v hermes >/dev/null 2>&1 || { echo "hermes not found — install Hermes first." >&2; exit 1; }
+
+say(){ printf '\033[1;36m▸ %s\033[0m\n' "$*"; }
+
+hermes kanban init >/dev/null 2>&1 || true
+hermes kanban boards create "$BOARD" >/dev/null 2>&1 || true
+
+REPO_ABS=""
+if [ -n "$REPO" ]; then
+  REPO_ABS="$(cd "$REPO" 2>/dev/null && pwd || true)"
+  [ -n "$REPO_ABS" ] || { echo "repo path not found: $REPO" >&2; exit 1; }
+  say "Board '$BOARD' workdir -> $REPO_ABS"
+  hermes kanban boards set-default-workdir "$BOARD" "$REPO_ABS" >/dev/null 2>&1 || true
+  echo "  tip: point the crew at a clean branch — work happens in this repo."
+fi
+
+if [ "$MODE" = swarm ]; then
+  say "Creating swarm graph: $GOAL"
+  wargs=()
+  for w in $WORKERS; do wargs+=(--worker "$w:$GOAL"); done
+  hermes kanban --board "$BOARD" swarm "$GOAL" \
+    --created-by "$ANCHOR" "${wargs[@]}" \
+    --verifier "$VERIFIER" --synthesizer "$SYNTH"
+else
+  say "Briefing $ANCHOR to decompose the goal onto board '$BOARD'"
+  hermes -p "$ANCHOR" --yolo -z "Plan and execute on the kanban board '$BOARD'. GOAL: ${GOAL}.${REPO_ABS:+ Working repo: ${REPO_ABS}.} Decompose into small, verifiable tasks ON THE BOARD (hermes kanban create/link), each assigned to the right specialist: devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, or devcrew-domain-expert — with acceptance criteria and dependencies. devcrew-reviewer verifies each task; devcrew-integrator synthesizes the result. Create the tasks now; do NOT implement them yourself."
+fi
+
+if [ "$DAEMON" = "1" ]; then
+  say "Starting dispatcher (tick ${INTERVAL}s) — Ctrl-C to stop. Watch with: hermes kanban tail"
+  exec hermes kanban daemon --interval "$INTERVAL" --verbose
+else
+  say "Tasks staged on '$BOARD'. Run the crew with:  hermes kanban daemon --verbose"
+  echo "  watch: hermes kanban tail   board: hermes kanban ls"
+fi
