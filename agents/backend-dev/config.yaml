@@ -1,0 +1,13 @@
+# hermes-devcrew :: backend-dev
+# Partial config — Hermes deep-merges this over its defaults.
+# Override the model locally any time:  hermes --profile devcrew-backend-dev model
+model:
+  default: mistralai/codestral-2508
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  api_mode: chat_completions
+toolsets:
+  - hermes-cli
+agent:
+  reasoning_effort: medium
+  max_turns: 90

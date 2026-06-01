@@ -1,0 +1,31 @@
+# hermes-devcrew — team manifest
+# Human-readable reference. The installer derives what it needs from agents/*/distribution.yaml,
+# so this file is the single place to *see* the whole team at a glance.
+name: hermes-devcrew
+version: 0.1.0
+description: An autonomous, hybrid software-engineering team for the Hermes agent platform.
+license: MIT
+
+# One OpenRouter key powers the whole crew.
+env_requires:
+  - name: OPENROUTER_API_KEY
+    required: true
+
+# Roster — each agent is a Hermes profile distribution under agents/<dir>/.
+agents:
+  - { name: devcrew-architect,     dir: agents/architect,     swarm_role: anchor,      tier: strong, model: deepseek/deepseek-v3.2 }
+  - { name: devcrew-backend-dev,   dir: agents/backend-dev,   swarm_role: worker,      tier: coder,  model: mistralai/codestral-2508 }
+  - { name: devcrew-frontend-dev,  dir: agents/frontend-dev,  swarm_role: worker,      tier: coder,  model: mistralai/codestral-2508 }
+  - { name: devcrew-devops,        dir: agents/devops,        swarm_role: worker,      tier: coder,  model: mistralai/codestral-2508 }
+  - { name: devcrew-reviewer,      dir: agents/reviewer,      swarm_role: verifier,    tier: strong, model: deepseek/deepseek-v3.2 }
+  - { name: devcrew-integrator,    dir: agents/integrator,    swarm_role: synthesizer, tier: strong, model: deepseek/deepseek-v3.2 }
+  - { name: devcrew-domain-expert, dir: agents/domain-expert, swarm_role: worker,      tier: coder,  model: mistralai/codestral-2508 }
+
+# Default swarm topology: parallel workers → verifier → synthesizer.
+swarm:
+  anchor:      devcrew-architect
+  workers:     [devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, devcrew-domain-expert]
+  verifier:    devcrew-reviewer
+  synthesizer: devcrew-integrator
+
+board: devcrew

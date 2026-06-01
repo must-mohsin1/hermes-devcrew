@@ -1,0 +1,17 @@
+# hermes-devcrew :: frontend-dev
+# A Hermes profile distribution. Install with:
+#   hermes profile install ./agents/frontend-dev --yes
+name: devcrew-frontend-dev
+version: 0.1.0
+description: "Frontend implementation specialist — UI, components, state, and accessibility."
+hermes_requires: ">=0.12.0"
+author: "hermes-devcrew"
+license: "MIT"
+env_requires:
+  - name: OPENROUTER_API_KEY
+    description: "OpenRouter API key — powers this agent's model"
+    required: true
+distribution_owned:
+  - SOUL.md
+  - config.yaml
+  - skills
