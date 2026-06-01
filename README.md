@@ -73,18 +73,6 @@ library and the [superpowers](https://github.com/obra/superpowers) project (MIT)
 
 ---
 
-## See it in action
-
-The animation above is the crew fanning a goal across the board. Here's a real artifact it produced
-**end-to-end** — an accessible profit-calculator widget that `designer` specced, `frontend-dev`
-built, and `qa` verified (logic + a11y + security) before `integrator` synthesized it:
-
-<p align="center">
-  <img src="docs/media/widget.png" alt="Munafa calculator widget — designed, built, and QA-verified by the crew" width="68%">
-</p>
-
----
-
 ## Install
 
 **Prerequisites:** [Hermes](https://hermes-agent.nousresearch.com/docs/) (`>= 0.12.0`), `git`,
