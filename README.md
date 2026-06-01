@@ -163,6 +163,39 @@ gotchas), the more expert the whole crew becomes about your codebase.
 
 ---
 
+## Tools & capabilities
+
+Every agent runs on Hermes with a shared toolset; different roles lean on different tools. Scope:
+
+| Toolset | Scope |
+|---|---|
+| `web` | web search + fetch/read docs (`web_search`, `web_extract`) |
+| `browser` | headless browser automation — drives the `page-agent` skill (JS, forms, screenshots) |
+| `code_execution` | run code and tests |
+| `file`, `terminal` | filesystem + shell (build, git) |
+| `delegation` | spawn parallel sub-agents |
+| `todo` | multi-step task tracking |
+| `memory` | recall/store project context (+ `agentmemory` MCP) |
+| `vision`, `image_gen` | image analysis + generation |
+| `session_search`, `clarify`, `cronjob`, `messaging`, `computer_use`, `tts` | recall sessions · ask the human · schedules · chat · macOS control · speech |
+
+**MCP servers:** `agentmemory` (`@agentmemory/mcp`) — persistent memory, shared. Add more with `hermes mcp add`.
+
+**Per agent (emphasis)**
+- **architect** — `delegation` + `todo` (decompose + fan-out)
+- **designer** — `browser` + `vision` + `web` (design refs, visual checks)
+- **backend-dev / frontend-dev** — `code_execution` + `file` + `web` (frontend also `browser`)
+- **devops** — `terminal` + `code_execution` (containers / CI / deploy)
+- **qa** — `browser` + `code_execution` (run the app, drive UI, run tests)
+- **reviewer** — `web` + `code_execution` (security research + verify)
+- **integrator** — `file` + `terminal` (merge, PR, release)
+- **domain-expert** — `memory` + `web` (carry codebase context)
+
+**Skills (libraries)** are listed in [What each agent knows](#what-each-agent-knows-bundled-skills).
+Inspect or change any agent's tools with `hermes --profile devcrew-<role> tools list` / `tools enable <toolset>`.
+
+> Building research + planning on top of this team? See **[dev-os →](https://github.com/must-mohsin1/dev-os)**.
+
 ## Models & cost
 
 One `OPENROUTER_API_KEY` powers everyone. Defaults favor cheap-but-strong open models
