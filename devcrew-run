@@ -19,7 +19,7 @@ ANCHOR=devcrew-architect
 WORKERS="devcrew-backend-dev devcrew-frontend-dev devcrew-devops devcrew-domain-expert"
 VERIFIER=devcrew-reviewer
 SYNTH=devcrew-integrator
-BOARD="${DEVCREW_BOARD:-devcrew}"
+BOARD="${DEVCREW_BOARD:-}"   # per-project board — derived from the repo once args are parsed
 
 MODE=architect; DAEMON=1; INTERVAL=30; POS=()
 while [ $# -gt 0 ]; do
@@ -36,6 +36,10 @@ while [ $# -gt 0 ]; do
 done
 
 GOAL="${POS[0]:-}"; REPO="${POS[1]:-}"
+# Separate kanban board per project (named after the repo); DEVCREW_BOARD overrides.
+if [ -z "$BOARD" ]; then
+  if [ -n "$REPO" ]; then BOARD="$(basename "$REPO" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-')"; else BOARD="devcrew"; fi
+fi
 [ -n "$GOAL" ] || { echo 'usage: devcrew-run "<goal>" [repo]   (--swarm | --no-daemon | --interval N)'; exit 2; }
 command -v hermes >/dev/null 2>&1 || { echo "hermes not found — install Hermes first." >&2; exit 1; }
 
