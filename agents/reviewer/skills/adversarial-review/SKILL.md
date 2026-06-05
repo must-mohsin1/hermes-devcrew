@@ -26,6 +26,9 @@ Use to verify a worker's completed task before it reaches the integrator. Postur
 5. **Footprint.** In scope? Diff minimal? Any dead code, debug logs, stray TODOs, or fabricated
    secrets?
 6. **Fit.** Matches the codebase's patterns, or bolted-on foreign code?
+7. **Design fit (UI tasks).** For any UI change, check the build against the project `DESIGN.md` and
+   the source style's Do's/Don'ts (see the **`design-reference`** skill): tokens honored, type scale
+   and spacing grid respected, the accent used as specified, AA contrast held.
 
 ## Verdict
 - **Pass** → comment what you verified (so the sign-off is auditable), then mark it verified.

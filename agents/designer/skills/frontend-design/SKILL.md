@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [frontend, design, ui, aesthetics, polish, accessibility]
-    related_skills: [ship-frontend-change, web-development]
+    related_skills: [ship-frontend-change, web-development, design-reference]
 ---
 
 # Frontend Design
@@ -19,7 +19,8 @@ template.
 ## Principles
 - **Honor the existing design system first.** Tokens, type scale, spacing, components. Consistency
   beats novelty. If a `DESIGN.md` or token set exists, it is the source of truth — don't deviate
-  without approval.
+  without approval. If none exists, use the **`design-reference`** skill to source one from Refero
+  before building, rather than inventing a look.
 - **Avoid AI slop.** No default purple→blue gradient hero, no `system-ui` everywhere, no row of
   evenly-gray rounded cards. Make deliberate choices: a real type pairing, a color used with
   intent, asymmetry where it earns attention.

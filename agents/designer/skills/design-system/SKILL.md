@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [design, design-system, tokens, branding, ui]
-    related_skills: [design-critique, frontend-design]
+    related_skills: [design-critique, frontend-design, design-reference]
 ---
 
 # Design System
@@ -17,7 +17,8 @@ Use to establish or evolve the product's visual language as a reusable system.
 
 ## Procedure
 1. **Understand** the product, audience, and desired tone. Look at the landscape; pick a direction
-   with intent (not a default template).
+   with intent (not a default template). Prefer the **`design-reference`** skill to pull a matching,
+   coherent system from Refero as your starting point instead of inventing from scratch.
 2. **Define tokens.** Color (semantic roles: bg / surface / ink / accent / success-warn-error),
    type scale, spacing scale (4/8 rhythm), radii, shadows, motion durations + easing.
 3. **Type.** A readable body face + a display face with personality (max two families); set scale,
