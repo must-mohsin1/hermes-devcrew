@@ -2,7 +2,7 @@
 # Partial config — Hermes deep-merges this over its defaults.
 # Override the model locally any time:  hermes --profile devcrew-designer model
 model:
-  default: deepseek/deepseek-v3.2
+  default: deepseek/deepseek-v4-flash
   provider: openrouter
   base_url: https://openrouter.ai/api/v1
   api_mode: chat_completions

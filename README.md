@@ -48,15 +48,15 @@ keys they need (`OPENROUTER_API_KEY`), and you supply your own.
 
 | Agent | Swarm role | What it does | Default model |
 |-------|-----------|--------------|---------------|
-| **architect** | anchor | Decomposes goals into a verifiable task graph; sets acceptance criteria | `deepseek/deepseek-v3.2` |
-| **backend-dev** | worker | APIs, services, data, tests (test-first) | `mistralai/codestral-2508` |
-| **frontend-dev** | worker | UI, components, state, accessibility | `mistralai/codestral-2508` |
-| **devops** | worker | Containers, CI/CD, deploys, observability (reversible, least-privilege) | `mistralai/codestral-2508` |
-| **reviewer** | **verifier** | Adversarial correctness + security gate before anything merges | `deepseek/deepseek-v3.2` |
-| **integrator** | **synthesizer** | Merges verified work into one coherent, green deliverable | `deepseek/deepseek-v3.2` |
-| **domain-expert** | worker | **Customizable** specialist that learns *your* codebase | `mistralai/codestral-2508` |
-| **qa** | **dynamic verifier** | Runs the app — finds bugs w/ repro steps, benchmarks, watches deploys | `deepseek/deepseek-v3.2` |
-| **designer** | UI/UX (upstream) | Owns the design system, UX, accessibility, and copy; specs for frontend-dev | `deepseek/deepseek-v3.2` |
+| **architect** | anchor | Decomposes goals into a verifiable task graph; sets acceptance criteria | `deepseek/deepseek-v4-flash` |
+| **backend-dev** | worker | APIs, services, data, tests (test-first) | `deepseek/deepseek-v4-flash` |
+| **frontend-dev** | worker | UI, components, state, accessibility | `deepseek/deepseek-v4-flash` |
+| **devops** | worker | Containers, CI/CD, deploys, observability (reversible, least-privilege) | `deepseek/deepseek-v4-flash` |
+| **reviewer** | **verifier** | Adversarial correctness + security gate before anything merges | `deepseek/deepseek-v4-flash` |
+| **integrator** | **synthesizer** | Merges verified work into one coherent, green deliverable | `deepseek/deepseek-v4-flash` |
+| **domain-expert** | worker | **Customizable** specialist that learns *your* codebase | `deepseek/deepseek-v4-flash` |
+| **qa** | **dynamic verifier** | Runs the app — finds bugs w/ repro steps, benchmarks, watches deploys | `deepseek/deepseek-v4-flash` |
+| **designer** | UI/UX (upstream) | Owns the design system, UX, accessibility, and copy; specs for frontend-dev | `deepseek/deepseek-v4-flash` |
 
 ---
 
@@ -198,8 +198,8 @@ Inspect or change any agent's tools with `hermes --profile devcrew-<role> tools 
 
 ## Models & cost
 
-One `OPENROUTER_API_KEY` powers everyone. Defaults favor cheap-but-strong open models
-(DeepSeek for reasoning roles, Codestral for coders). Swap any agent's model anytime:
+One `OPENROUTER_API_KEY` powers everyone. Defaults use DeepSeek V4 Flash across
+all roles for fast, inexpensive OpenRouter-backed execution. Swap any agent's model anytime:
 
 ```bash
 hermes --profile devcrew-reviewer model     # pick interactively
