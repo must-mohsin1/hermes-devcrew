@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""devcrew-closeout — resolve a quiesced devcrew board behind a REAL build check.
+
+After a devcrew run, cards can linger in ``blocked`` (review-required handoffs) or
+``review`` even though the work is done. This is the end-of-run gate:
+
+  1. detect   cards with status blocked/review on the board
+  2. verify   run a real check in the repo (--check CMD, else auto-detect:
+              package.json build script -> pnpm/npm run build; tsconfig.json ->
+              npx tsc --noEmit; pyproject.toml/pytest.ini -> pytest -q)
+  3. resolve  green -> audit comment + unblock (if blocked) + complete
+              red   -> file ONE fix card for devcrew-integrator; its title carries
+                       the first 5 affected card ids (watchdog dedups on title);
+                       when a failure spans >5 cards the overflow ids are body-only,
+                       so the watchdog may still file its own remediation for those —
+                       closeout itself dedups on title+body+result either way
+              none  -> report only; unverified work is NEVER auto-completed
+
+Drives the board exclusively through `hermes kanban` (HERMES_KANBAN_BOARD pins the
+board). NEVER touches git, kills tasks, or archives cards.
+
+Exit codes: 0 resolved / nothing to do; 1 check failed (fix card filed);
+2 usage or environment error (board unreachable, check could not run, watch timeout).
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+PENDING_STATES = ("triage", "todo", "scheduled", "ready", "running")
+RESOLVE_STATES = ("blocked", "review")
+FIX_ASSIGNEE = "devcrew-integrator"
+AUTHOR = "auto-closeout"
+CHECK_TIMEOUT = 900
+OUTPUT_TAIL_LINES = 50
+# Mirrors devcrew-bridge watchdog.REMEDIATION_RE — keep in sync.
+REMEDIATION_RE = re.compile(r"(?<![a-z0-9])(?:fix|remediation|recovery|repair)(?![a-z0-9])")
+
+
+def board_slug_for_repo(repo: str) -> str:
+    """Mirror devcrew-run's board naming: basename, lowercased, spaces->dashes,
+    everything outside [a-z0-9-] dropped."""
+    base = os.path.basename(os.path.abspath(repo))
+    base = base.lower().replace(" ", "-")
+    return re.sub(r"[^a-z0-9-]", "", base)
+
+
+def hermes_env(board: str) -> dict:
+    env = dict(os.environ)
+    env["HERMES_KANBAN_BOARD"] = board
+    return env
+
+
+def run_kanban(args: list[str], board: str, timeout: int = 60) -> subprocess.CompletedProcess:
+    return subprocess.run(["hermes", "kanban", *args], capture_output=True,
+                          text=True, env=hermes_env(board), timeout=timeout)
+
+
+def list_tasks(board: str) -> list[dict]:
+    r = run_kanban(["list", "--json"], board)
+    if r.returncode != 0:
+        raise RuntimeError(f"hermes kanban list failed: {(r.stderr or '').strip()[-300:]}")
+    data = json.loads(r.stdout or "[]")
+    return data if isinstance(data, list) else []
+
+
+def detect(tasks: list[dict]) -> list[dict]:
+    return [t for t in tasks if (t.get("status") or "").lower() in RESOLVE_STATES]
+
+
+def pending_count(tasks: list[dict]) -> int:
+    return sum(1 for t in tasks if (t.get("status") or "").lower() in PENDING_STATES)
+
+
+def resolve_workdir(repo_arg: str | None, tasks: list[dict]) -> str | None:
+    if repo_arg:
+        return os.path.abspath(repo_arg)
+    for t in tasks:
+        if (t.get("workspace_kind") or "") == "dir" and t.get("workspace_path"):
+            return str(t["workspace_path"])
+    return None
+
+
+def autodetect_check(workdir: str) -> list[str] | None:
+    d = Path(workdir)
+    pkg = d / "package.json"
+    if pkg.is_file():
+        try:
+            scripts = json.loads(pkg.read_text(encoding="utf-8")).get("scripts", {})
+        except (OSError, json.JSONDecodeError, AttributeError):
+            scripts = {}
+        if "build" in scripts:
+            runner = "pnpm" if (d / "pnpm-lock.yaml").is_file() else "npm"
+            return [runner, "run", "build"]
+    if (d / "tsconfig.json").is_file():
+        return ["npx", "tsc", "--noEmit"]
+    if (d / "pyproject.toml").is_file() or (d / "pytest.ini").is_file():
+        return ["pytest", "-q"]
+    return None
+
+
+def run_check(cmd: list[str] | str, workdir: str) -> tuple[str, int, str]:
+    """Run the check. Returns (kind, exit_code, output_tail). kind:
+    'green' | 'red' | 'broken' (broken = the command could not even run —
+    OSError for argv checks, exit 126/127 for shell --check strings)."""
+    shell = isinstance(cmd, str)
+    try:
+        r = subprocess.run(cmd, cwd=workdir, shell=shell, capture_output=True,
+                           text=True, timeout=CHECK_TIMEOUT)
+    except OSError as exc:
+        # FileNotFoundError, PermissionError, NotADirectoryError, ... —
+        # the check could not run at all.
+        return "broken", 2, str(exc)
+    except subprocess.TimeoutExpired:
+        return "red", 1, f"check timed out after {CHECK_TIMEOUT}s"
+    out = (r.stdout or "") + "\n" + (r.stderr or "")
+    tail = "\n".join(out.strip().splitlines()[-OUTPUT_TAIL_LINES:])
+    # Shell checks surface spawn failures as exit 126/127; argv checks raise
+    # OSError instead — two mechanisms, same meaning ("broken", never "red").
+    if shell and r.returncode in (126, 127):
+        return "broken", r.returncode, tail
+    return ("green" if r.returncode == 0 else "red"), r.returncode, tail
+
+
+def resolve_green(board: str, cards: list[dict], check_desc: str) -> tuple[list[str], list[str]]:
+    """Resolve each card; returns (resolved_ids, failed_ids). A card counts as
+    resolved only when `kanban complete` exits 0 — comment/unblock failures are
+    audit-trail losses, not resolution failures."""
+    resolved: list[str] = []
+    failed: list[str] = []
+    for t in cards:
+        tid = str(t.get("id"))
+        note = f"auto-closeout: verified via `{check_desc}`, exit 0 — resolving."
+        run_kanban(["comment", tid, note, "--author", AUTHOR], board)
+        if (t.get("status") or "").lower() == "blocked":
+            run_kanban(["unblock", "--reason", note, tid], board)
+        r = run_kanban(["complete", tid, "--result", note], board)
+        (resolved if r.returncode == 0 else failed).append(tid)
+    return resolved, failed
+
+
+def _mentions(text: str, cid: str) -> bool:
+    """Word-boundary id match — mirrors the bridge watchdog's _mentions_task_id,
+    so `t-1` never matches inside `t-12`."""
+    return re.search(
+        rf"(?<![a-z0-9_]){re.escape(cid.lower())}(?![a-z0-9_])", text
+    ) is not None
+
+
+def active_fix_exists(tasks: list[dict], card_ids: list[str]) -> bool:
+    """Mirror of watchdog._active_remediation_exists: an active (ready/running) card
+    whose TITLE matches REMEDIATION_RE and whose text mentions an affected card id."""
+    for t in tasks:
+        if (t.get("status") or "").lower() not in ("ready", "running"):
+            continue
+        title = (t.get("title") or "").lower()
+        if not REMEDIATION_RE.search(title):
+            continue
+        text = " ".join(str(t.get(k) or "") for k in ("title", "body", "result")).lower()
+        if any(_mentions(text, cid) for cid in card_ids):
+            return True
+    return False
+
+
+def file_fix_card(board: str, ids: list[str], check_desc: str, exit_code: int,
+                  tail: str) -> str | None:
+    shown = ids[:5]
+    extra = f" +{len(ids) - len(shown)} more" if len(ids) > len(shown) else ""
+    # First 5 ids ride in the TITLE because the watchdog dedups on title; overflow
+    # ids are body-only, so the watchdog may still file for those — closeout dedups
+    # on title+body+result either way.  The body carries the full id list + evidence.
+    title = (f"Fix build check failure on {board} — cards "
+             f"{', '.join(shown)}{extra} (auto-closeout)")
+    digest = hashlib.sha256("\n".join(sorted(ids)).encode("utf-8")).hexdigest()[:12]
+    body = (
+        f"auto-closeout ran `{check_desc}` and it FAILED (exit {exit_code}).\n\n"
+        f"Affected cards awaiting resolution: {', '.join(ids)}\n\n"
+        f"Last {OUTPUT_TAIL_LINES} lines of output:\n```\n{tail}\n```\n\n"
+        "Acceptance: make the check pass, then complete this card with command "
+        "evidence. The affected cards stay as-is until the tree is green."
+    )
+    r = run_kanban(["create", title, "--body", body, "--assignee", FIX_ASSIGNEE,
+                    "--created-by", AUTHOR,
+                    "--idempotency-key", f"closeout-fix-{board}-{digest}",
+                    "--json"], board)
+    if r.returncode != 0:
+        raise RuntimeError(f"could not create fix card: {(r.stderr or '').strip()[-300:]}")
+    try:
+        parsed = json.loads(r.stdout)
+        return parsed.get("id") if isinstance(parsed, dict) else None
+    except json.JSONDecodeError:
+        return (r.stdout or "").strip() or None
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        prog="devcrew-closeout", description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--board", default=None, help="Board slug (wins over --repo's slug)")
+    ap.add_argument("--repo", default=None,
+                    help="Repo path: board slug via devcrew-run's naming rule, and the "
+                         "working directory for the check")
+    ap.add_argument("--check", default=None,
+                    help="Check command, run via the shell in the repo")
+    ap.add_argument("--watch", action="store_true",
+                    help="Poll until the board is quiescent, then act once")
+    ap.add_argument("--timeout", type=int, default=1800, help="--watch budget (seconds)")
+    ap.add_argument("--poll", type=int, default=10, help="--watch poll interval (seconds)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="Report what would happen; mutate nothing")
+    ap.add_argument("--json", action="store_true", dest="as_json")
+    args = ap.parse_args(argv)
+
+    if not args.board and not args.repo:
+        ap.error("--board or --repo is required")
+    board = args.board or board_slug_for_repo(args.repo)
+    if not board:
+        ap.error("could not derive a board slug from --repo; pass --board explicitly")
+
+    def emit(payload: dict, code: int) -> int:
+        payload.setdefault("board", board)
+        if args.as_json:
+            print(json.dumps(payload, indent=2))
+        else:
+            print(payload.get("summary", ""))
+        return code
+
+    def fetch() -> tuple[list[dict] | None, str | None]:
+        try:
+            return list_tasks(board), None
+        except (RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError,
+                OSError) as exc:
+            return None, f"closeout: {exc}"
+
+    tasks, err = fetch()
+    if tasks is None:
+        return emit({"status": "error", "summary": err}, 2)
+
+    if args.watch:
+        deadline = time.monotonic() + args.timeout
+        while pending_count(tasks) > 0:
+            if time.monotonic() >= deadline:
+                return emit({"status": "error",
+                             "summary": f"closeout: board '{board}' still active "
+                                        f"after {args.timeout}s"}, 2)
+            time.sleep(args.poll)
+            tasks, err = fetch()
+            if tasks is None:
+                return emit({"status": "error", "summary": err}, 2)
+
+    cards = detect(tasks)
+    if not cards:
+        return emit({"status": "ok", "resolved": [],
+                     "summary": f"closeout: nothing to resolve on '{board}'."}, 0)
+
+    ids = [str(t.get("id")) for t in cards]
+    workdir = resolve_workdir(args.repo, tasks)
+    check_cmd: list[str] | str | None = args.check
+    if check_cmd is None and workdir:
+        check_cmd = autodetect_check(workdir)
+    if not workdir or check_cmd is None:
+        why = "no workdir resolvable" if not workdir else "no check command detectable"
+        return emit({"status": "report-only", "cards": ids,
+                     "summary": (f"closeout: {len(ids)} card(s) need attention on "
+                                 f"'{board}' ({', '.join(ids)}) but {why} — refusing "
+                                 "to auto-complete unverified work.")}, 0)
+
+    check_desc = check_cmd if isinstance(check_cmd, str) else " ".join(check_cmd)
+    kind, code, tail = run_check(check_cmd, workdir)
+    if kind == "broken":
+        return emit({"status": "error",
+                     "summary": (f"closeout: check `{check_desc}` could not run "
+                                 f"(exit {code}): {tail.strip()[-300:]}")}, 2)
+
+    if kind == "green":
+        if args.dry_run:
+            return emit({"status": "ok", "resolved": ids, "dry_run": True,
+                         "check": check_desc,
+                         "summary": (f"closeout (dry-run): check green — would resolve "
+                                     f"{len(ids)} card(s): {', '.join(ids)}.")}, 0)
+        resolved, failed = resolve_green(board, cards, check_desc)
+        if failed:
+            return emit({"status": "partial", "resolved": resolved, "failed": failed,
+                         "check": check_desc,
+                         "summary": (f"closeout: check green but {len(failed)} card(s) "
+                                     f"FAILED to complete on '{board}': {', '.join(failed)} "
+                                     f"(resolved: {', '.join(resolved) or 'none'}) — "
+                                     "board needs manual attention.")}, 2)
+        return emit({"status": "ok", "resolved": resolved, "check": check_desc,
+                     "summary": (f"closeout: check green — resolved {len(resolved)} "
+                                 f"card(s) on '{board}': {', '.join(resolved)}.")}, 0)
+
+    # red
+    if active_fix_exists(tasks, ids):
+        return emit({"status": "check-failed", "fix_card": None, "cards": ids,
+                     "summary": ("closeout: check red; an active fix card already "
+                                 f"covers {', '.join(ids)} — not filing another.")}, 1)
+    if args.dry_run:
+        return emit({"status": "check-failed", "fix_card": None, "cards": ids,
+                     "dry_run": True,
+                     "summary": (f"closeout (dry-run): check `{check_desc}` FAILED "
+                                 f"(exit {code}) — would file a fix card for "
+                                 f"{FIX_ASSIGNEE}.")}, 1)
+    try:
+        fix_id = file_fix_card(board, ids, check_desc, code, tail)
+    except RuntimeError as exc:
+        return emit({"status": "error", "summary": f"closeout: {exc}"}, 2)
+    return emit({"status": "check-failed", "fix_card": fix_id, "cards": ids,
+                 "summary": (f"closeout: check `{check_desc}` FAILED (exit {code}) — "
+                             f"filed fix card {fix_id} for {FIX_ASSIGNEE}; "
+                             f"{len(ids)} card(s) left as-is.")}, 1)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

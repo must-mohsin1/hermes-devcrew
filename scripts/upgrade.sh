@@ -31,7 +31,8 @@ fi
 bash install.sh --yes --skip-keys 2>&1 || echo "install.sh completed with warnings"
 
 # Update the runner symlink
-chmod +x devcrew-run 2>/dev/null || true
+chmod +x devcrew-run devcrew-closeout 2>/dev/null || true
 [ -d "$HOME/.local/bin" ] && ln -sf "$INSTALL_DIR/devcrew-run" "$HOME/.local/bin/devcrew-run"
+[ -d "$HOME/.local/bin" ] && ln -sf "$INSTALL_DIR/devcrew-closeout" "$HOME/.local/bin/devcrew-closeout"
 
 echo "hermes-devcrew upgrade: done ($(cat VERSION 2>/dev/null || echo unknown))"
