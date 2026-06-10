@@ -66,7 +66,7 @@ if [ "$MODE" = swarm ]; then
     --verifier "$VERIFIER" --synthesizer "$SYNTH"
 else
   say "Briefing $ANCHOR to decompose the goal onto board '$BOARD'"
-  hermes -p "$ANCHOR" --yolo -z "Plan and execute on the kanban board '$BOARD'. GOAL: ${GOAL}.${REPO_ABS:+ Working repo: ${REPO_ABS}.} Decompose into small, verifiable tasks ON THE BOARD (hermes kanban create/link), each assigned to the right specialist: devcrew-designer (UI/UX specs), devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, or devcrew-domain-expert — with acceptance criteria and dependencies. devcrew-reviewer verifies code statically and devcrew-qa tests dynamically after implementation; devcrew-integrator synthesizes the result. Create the tasks now; do NOT implement them yourself."
+  hermes -p "$ANCHOR" --yolo -z "Plan and execute on the kanban board '$BOARD'. GOAL: ${GOAL}.${REPO_ABS:+ Working repo: ${REPO_ABS}.} Decompose into small, verifiable tasks ON THE BOARD (hermes kanban create/link), each assigned to the right specialist: devcrew-designer (UI/UX specs), devcrew-backend-dev, devcrew-frontend-dev, devcrew-devops, or devcrew-domain-expert — with acceptance criteria and dependencies. Each worker MUST call kanban_complete (NOT kanban_block) when its task code is done and tests pass. Do NOT self-block for review — the reviewer and integrator steps exist downstream to catch issues. If a worker finds an issue, it should create a follow-up fix card, not block itself. devcrew-reviewer verifies code statically and devcrew-qa tests dynamically after implementation; devcrew-integrator synthesizes the result. Create the tasks now; do NOT implement them yourself."
 fi
 
 if [ "$DAEMON" = "1" ]; then
