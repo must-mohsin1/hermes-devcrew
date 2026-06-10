@@ -160,6 +160,14 @@ if [ -f "$RUNNER" ]; then
       && say "Linked devcrew-run -> ~/.local/bin/devcrew-run"
   fi
 fi
+CLOSEOUT="$SRC/devcrew-closeout"
+if [ -f "$CLOSEOUT" ]; then
+  chmod +x "$CLOSEOUT" 2>/dev/null || true
+  if [ -d "$HOME/.local/bin" ]; then
+    ln -sf "$CLOSEOUT" "$HOME/.local/bin/devcrew-closeout" 2>/dev/null \
+      && say "Linked devcrew-closeout -> ~/.local/bin/devcrew-closeout"
+  fi
+fi
 
 # --- 8) Optional autonomous dispatcher -------------------------------------
 if [ "$START_DAEMON" = "1" ]; then
