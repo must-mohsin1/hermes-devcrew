@@ -112,7 +112,7 @@ if [ -d "$SRC/skills/devops/kanban-worker" ]; then
     [ -d "$HERMES_HOME_DIR/profiles/$name" ] || continue
     pdir="$HERMES_HOME_DIR/profiles/$name/skills/devops/kanban-worker"
     if [ -f "$pdir/SKILL.md" ] && ! diff -q "$pdir/SKILL.md" "$SRC/skills/devops/kanban-worker/SKILL.md" >/dev/null 2>&1; then
-      echo "  ! overwriting drifted skill: $pdir/SKILL.md"
+      warn "overwriting drifted skill: $pdir/SKILL.md"
     fi
     mkdir -p "$pdir" && cp -R "$SRC/skills/devops/kanban-worker/." "$pdir/"
     say "skills: $name += kanban-worker (seed)"
