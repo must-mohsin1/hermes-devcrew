@@ -24,7 +24,8 @@ Use when a new goal arrives and the crew needs a plan it can execute autonomousl
 3. **Slice into tasks.** Each task: one outcome, one owner, testable, finishable in a short
    session. Split anything larger.
 4. **Assign owners** by specialty: `devcrew-backend-dev`, `devcrew-frontend-dev`,
-   `devcrew-devops`, `devcrew-domain-expert`.
+   `devcrew-devops`, `devcrew-domain-expert`, `devcrew-designer` (UI/UX specs,
+   upstream of frontend-dev).
 5. **Write acceptance criteria** per task — concrete and checkable, so `devcrew-reviewer` can
    verify without taste.
 6. **Wire dependencies.** `hermes kanban link <parent> <child>` only where order truly matters;
@@ -44,6 +45,11 @@ hermes kanban swarm "<goal>" \
   --synthesizer devcrew-integrator
 ```
 
+**The fast path wires worker → verifier → synthesizer only — it does NOT
+create the QA lane.** For any build that produces a runnable app, add the QA
+card manually (parented on every impl card, with the integrator re-pointed to
+depend on it too), or use the full dep rule below instead.
+
 ## Done when
 Every task has an owner, acceptance criteria, and correct dependencies; the board is ready for
 the dispatcher to run.
@@ -51,7 +57,7 @@ the dispatcher to run.
 ## Reviewer / QA / integrator dep rule (REQUIRED)
 
 The reviewer, QA, and integrator lanes are **not** parallel workers. They are
-downstream gates (`team.yaml`: verifier, dynamic-verifier, synthesizer). If
+downstream gates (`team.yaml`: verifier, dynamic_verifier, synthesizer). If
 you wire them as siblings of the implementation tasks, they run while the
 code is still being written and produce "this code doesn't exist yet"
 findings.
@@ -62,31 +68,33 @@ implementation cards only.
 
 **Mandatory dep graph for any build with >3 implementation tasks:**
 
-```
-T-design (designer) ──► frontend impl cards only
+```text
+T-design (devcrew-designer) ──► frontend impl cards only
 
-T1 (impl) ──┐
-T2 (impl) ──┤   all implementation cards run in PARALLEL;
- …          ┼─► each one is a parent of BOTH gates
-TN (impl) ──┘
-        ▼                      ▼
-  T14-Reviewer (static)   T15-QA (dynamic)      ← parallel gates
-        └───────────┬──────────┘
-                    ▼
-        T16-Integrator (parents: T14 AND T15; the orchestrator expands
-                        this at runtime with every fix card the gates create)
+T1..TN (impl, all PARALLEL siblings)
+   │ every impl card is a parent of BOTH gates
+   ├──► T-reviewer (static gate)   ──┐
+   └──► T-qa (dynamic gate)        ──┤
+                                     ▼
+        T-integrator (parents: T-reviewer AND T-qa; the orchestrator
+        expands this at runtime with every fix card the gates create)
 ```
+
+Card names here are labels, not fixed ids — historically these were T14
+(reviewer), T15 (QA), T16 (integrator) on the control-plane builds. Use
+whatever ids your board assigns.
 
 Concretely, for every implementation card Tn:
 
-- `hermes kanban link Tn T14` AND `hermes kanban link Tn T15` — one card per
-  call (multi-id link is silent on latter ids; loop per-id).
-- Integrator: `hermes kanban link T14 T16` and `hermes kanban link T15 T16`.
+- `hermes kanban link Tn T-reviewer` AND `hermes kanban link Tn T-qa` — one
+  card per call (multi-id link is silent on latter ids; loop per-id).
+- Integrator: `hermes kanban link T-reviewer T-integrator` and
+  `hermes kanban link T-qa T-integrator`.
 - Remember FIRST_ARG = PARENT: `link A B` makes A the parent of B.
 
 **When a build has 3 or fewer implementation tasks**, the gates may be
-parented on the last impl card only; the integrator still depends on both
-gates.
+parented on any one implementation card (they are siblings, so the choice does
+not affect ordering); the integrator still depends on both gates.
 
 **Ownership discipline (mirrors the devcrew-run briefing):** every card body
 MUST list the exact files it creates or modifies under a `Files:` line.
