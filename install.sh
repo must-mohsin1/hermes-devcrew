@@ -102,6 +102,23 @@ done
 [ -n "$INSTALLED" ] || die "No agents installed."
 say "Installed:$INSTALLED"
 
+# --- 5a) Shared doctrine skills — fan repo seeds into every installed profile ---
+# Seeds live in skills/devops/<name>/ at the repo root. Edit doctrine THERE,
+# never in ~/.hermes/profiles/ — this block overwrites profile copies (with a
+# drift warning) on every install/upgrade.
+if [ -d "$SRC/skills/devops/kanban-worker" ]; then
+  for d in $AGENT_DIRS; do
+    role="$(basename "$d")"; name="devcrew-$role"
+    [ -d "$HERMES_HOME_DIR/profiles/$name" ] || continue
+    pdir="$HERMES_HOME_DIR/profiles/$name/skills/devops/kanban-worker"
+    if [ -f "$pdir/SKILL.md" ] && ! diff -q "$pdir/SKILL.md" "$SRC/skills/devops/kanban-worker/SKILL.md" >/dev/null 2>&1; then
+      echo "  ! overwriting drifted skill: $pdir/SKILL.md"
+    fi
+    mkdir -p "$pdir" && cp -R "$SRC/skills/devops/kanban-worker/." "$pdir/"
+    say "skills: $name += kanban-worker (seed)"
+  done
+fi
+
 # --- 5b) Orchestrator routing descriptions (consumed by the kanban orchestrator) ---
 say "Setting orchestrator descriptions"
 for d in $AGENT_DIRS; do
