@@ -12,4 +12,6 @@ toolsets:
   - hermes-cli
 agent:
   reasoning_effort: high
-  max_turns: 90
+  # 70 turns: longest clean review ran ~72 iterations; classify-and-file + evidence doctrine add tool calls, so do not starve it.
+  # Wall-clock caps for dispatched workers are per-task max_runtime_seconds (item 10 scope) — agent.gateway_timeout only governs gateway chat-session inactivity, NOT kanban workers, so it is deliberately not set here.
+  max_turns: 70
