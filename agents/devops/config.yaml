@@ -12,4 +12,6 @@ toolsets:
   - hermes-cli
 agent:
   reasoning_effort: medium
-  max_turns: 90
+  # 60 turns: devops tasks complete in ~308s avg / 1057s max.
+  # Wall-clock caps for dispatched workers are per-task max_runtime_seconds (item 10 scope) — agent.gateway_timeout only governs gateway chat-session inactivity, NOT kanban workers, so it is deliberately not set here.
+  max_turns: 60

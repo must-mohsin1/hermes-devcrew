@@ -224,6 +224,8 @@ hermes profile update devcrew-architect      # re-pull doctrine/skills; keeps yo
 hermes profile delete devcrew-architect      # remove one agent
 ```
 
+What changed between versions lives in [`CHANGELOG.md`](CHANGELOG.md); known deferred work in [`TODOS.md`](TODOS.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

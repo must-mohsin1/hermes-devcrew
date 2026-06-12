@@ -12,4 +12,6 @@ toolsets:
   - hermes-cli
 agent:
   reasoning_effort: high
-  max_turns: 90
+  # 80 turns: successful integrations run ~61-75 iterations (max 2488s wall); 90 was the runaway ceiling.
+  # Wall-clock caps for dispatched workers are per-task max_runtime_seconds (item 10 scope) — agent.gateway_timeout only governs gateway chat-session inactivity, NOT kanban workers, so it is deliberately not set here.
+  max_turns: 80

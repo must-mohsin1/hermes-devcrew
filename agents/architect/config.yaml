@@ -12,4 +12,6 @@ toolsets:
   - hermes-cli
 agent:
   reasoning_effort: high
-  max_turns: 90
+  # 60 turns: decomposition is read-light/write-light.
+  # Wall-clock caps for dispatched workers are per-task max_runtime_seconds (item 10 scope) — agent.gateway_timeout only governs gateway chat-session inactivity, NOT kanban workers, so it is deliberately not set here.
+  max_turns: 60
