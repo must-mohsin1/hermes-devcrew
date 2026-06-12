@@ -71,6 +71,7 @@ hermes logs               # Hermes logs
 ```bash
 hermes --profile devcrew-reviewer model            # change its model
 hermes --profile devcrew-backend-dev config set agent.reasoning_effort high
+hermes --profile devcrew-qa config set agent.max_turns 85   # raise/lower its turn cap (defaults: 80 backend-dev/integrator/qa, 70 reviewer, 60 others)
 hermes --profile devcrew-domain-expert skills install <skill>   # add a capability
 ```
 
