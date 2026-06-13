@@ -50,10 +50,10 @@ mechanically verified clean, build-green, and secure.
 - **Kernel/dispatcher enforcement** of the mechanical invariants (same-tree
   serialization at dispatch, deepened evidence gates) — that is **Phase 2**.
   Phase 1 gives the release-manager the doctrine + harness to *catch* these like the
-  operator did; Phase 2 makes the kernel *prevent* them. **Exception (CEO review
-  2026-06-14):** the one kernel guard that closes the failure which actually reached
-  `main` this session — reject `git add -A` / debris commits from workers — is pulled
-  forward into Phase 1. See §11.
+  operator did; Phase 2 makes the kernel *prevent* them. (The CEO review briefly pulled
+  the debris-guard forward as E4, then the spec review found it collides with
+  `checkpoint_manager`'s `git add -A` and is "common case only" — so D3 returned E4 to
+  Phase 2, where it pairs with the structured `files` card field. See §11.)
 - **Throughput optimization** (parallelism, retry economics, budgeting) — **Phase 3**.
 - Auto-merging or pushing to `main` — never, in any phase.
 - NLP-parsing arbitrary spec prose — the verifier targets *checkable* assertions only.
@@ -218,11 +218,11 @@ expertise is *verified* transferred, not just written down. All tests run on
 
 - **Phase 1 (this spec):** the release-boundary trust layer — agent + harness, the
   build→clean-PR pipeline. Catches the failures like the operator did.
-- **Phase 2:** the *remaining* kernel enforcement — dispatch-time same-tree
-  serialization and deepened evidence gates — so Phase 1 no longer depends on agents
-  following doctrine. (The debris-commit guard moved to Phase 1 as E4 — see §11. A
-  structured `files`/`blast_radius` card field, surfaced by the CEO review, is also a
-  Phase-2 kernel candidate that would make `clean-integrate`'s lane map robust.)
+- **Phase 2:** the kernel enforcement — dispatch-time same-tree serialization, deepened
+  evidence gates, the **E4 debris-guard** (D3 returned it here), and a structured
+  `files`/`blast_radius` card field (surfaced by the CEO review) that gives the kernel
+  the allow-list E4 needs and makes `clean-integrate`'s lane map robust. These pair
+  naturally, which is why E4 belongs here, not in Phase 1.
 - **Phase 3:** throughput — parallelism, retry economics, budgeting — once correctness
   is locked.
 
@@ -241,16 +241,15 @@ Phase 1 from "the agreed harness" toward the self-improving trust layer (approac
 | E1 | **Self-improving check-library** | New first-class component: a registry mapping `incident → harness rule + regression fixture`. The release-manager (and the operator) MUST add an entry whenever a new failure class is caught, so the same mistake can never recur. This is the moat — trust compounds build-over-build. The "incidents as fixtures" testing note in §8 becomes this living mechanism, not a one-time seed. | ~3-5 days / ~1-2 hrs |
 | E2 | **Stronger model for the verification gates** | CORRECTED: the *whole* devcrew fleet runs `deepseek-v4-flash` (per `team.yaml`), not just the integrator — so reviewer and QA are also trust gates on the weak model. E2 upgrades the **verification-judgment roles** (release-manager first, and reviewer + QA flagged as equal-priority candidates) to a stronger reasoning model, with an eval against E1's fixtures that defines a concrete pass bar (e.g. ≥ N/M verify fixtures correct, strictly better than flash). If it doesn't beat flash, keep flash. | ~0.5-1 day / ~15-30 min |
 | E3 | **Fleet-wide harness tools** | The three tools are not release-manager-only: the **orchestrator** runs `spec-claim-verify` at decompose-time (catches false premises before the human even sees the gate), and **workers** run `pr-hygiene-gate` before completing (debris never enters the tree). The release-manager becomes the backstop, not the sole catch. Extends §6 data flow to the orchestrator + worker card lifecycles. | ~2-3 days / ~1 hr |
-| E4 | **Pull-forward kernel debris-guard** | CORRECTED & RE-SCOPED: the naive framing ("reject worker `git add -A`") is unsafe — `checkpoint_manager.py` uses `git add -A` as core rollback-snapshot infra, run constantly; a blanket reject breaks checkpointing fleet-wide. The guard must target the **worker→branch / integrator commit path only**, and explicitly exempt the checkpoint manager's internal `add -A`. It also cannot perfectly tell debris from legitimate new source (the lane allow-list lives in the kanban DB, not the repo the kernel sees), so it is **gitignore + path/size heuristics = "catches the common case," NOT "structurally impossible."** Precise debris/source separation stays in `clean-integrate` (agent layer, which has the `Files:` map). **This is materially harder than first estimated.** | ~3-5 days / ~1-2 hrs |
+| E4 | **Kernel debris-guard** | **DEFERRED to Phase 2 (D3, 2026-06-14).** Briefly accepted into Phase 1, then the spec review found the naive "reject worker `git add -A`" is unsafe — `checkpoint_manager.py` uses `git add -A` as core rollback-snapshot infra; a blanket reject breaks checkpointing fleet-wide. It must target the worker→branch commit path only, exempt the checkpoint manager, and even then is gitignore+heuristics ("common case," not "structurally impossible"). Re-scoped to ~3-5 days and moved to Phase 2, where it pairs with the structured `files` card field that gives the kernel the allow-list it needs. Phase 1's `clean-integrate` + `pr-hygiene-gate` already catch debris at integration in the meantime. | ~3-5 days / ~1-2 hrs (Phase 2) |
 
-**Net Phase-1 scope:** the full harness + elevated release-manager (B), now fleet-wide
-(E3), backed by a stronger-model gate (E2), feeding a self-improving check-library (E1),
-with one structural kernel guard (E4). Remaining Phase 2 = the rest of the kernel
-enforcement (same-tree serialization at dispatch, deepened evidence gates, the
-structured `files` card field); Phase 3 = throughput. After the CEO-review corrections
-(E4 re-scoped up from ~1-2 to ~3-5 days), the expansions enlarge the first bite by
-roughly **9-15 human-days** (~4-6 hrs CC) over baseline B. E4's growth is the reason
-its Phase-1 inclusion is re-opened as an unresolved decision (see Reviewer Concerns).
+**Net Phase-1 scope (final, post-D3):** the full harness + elevated release-manager
+(B), now fleet-wide (E3), backed by a stronger-model gate (E2), feeding a self-improving
+check-library (E1). **E4 deferred to Phase 2.** Remaining Phase 2 = same-tree
+serialization at dispatch, deepened evidence gates, the structured `files` card field,
+and the E4 debris-guard (which pairs with that field). Phase 3 = throughput. The Phase-1
+expansions (E1+E2+E3) enlarge the first bite by roughly **6-9 human-days** (~3-4 hrs CC)
+over baseline B — the trade the user accepted for the compounding moat.
 
 ---
 
@@ -297,11 +296,12 @@ system. The factual errors are fixed; the feasibility of E4 changed materially
 (~3-5 days, only "catches the common case," collides with checkpoint infra), which
 re-opens whether E4 belongs in Phase 1.
 
-**UNRESOLVED DECISIONS:**
-- E4 (kernel debris-guard) inclusion in Phase 1: the CEO review accepted it at a
-  ~1-2 day / "structurally impossible" framing that the spec review disproved
-  (~3-5 days, "common case only," checkpoint-manager collision). Keep it in Phase 1 at
-  the corrected scope, or defer it to Phase 2 where the rest of the kernel work lives?
-  Owner: user. The agent-layer `clean-integrate` + `pr-hygiene-gate` already catch
-  debris at integration, so deferring E4 loses only the *structural* (pre-integration)
-  guarantee, not all debris protection.
+**Resolved decisions:**
+- E4 (kernel debris-guard) Phase placement → **D3 (2026-06-14): deferred to Phase 2.**
+  The spec review disproved its ~1-2 day / "structurally impossible" framing
+  (~3-5 days, "common case only," checkpoint-manager collision); Phase 1's agent-layer
+  `clean-integrate` + `pr-hygiene-gate` already catch debris at integration, so Phase 1
+  loses only the structural pre-integration guarantee until Phase 2. Final Phase-1
+  scope = baseline B + E1 + E2 + E3.
+
+NO UNRESOLVED DECISIONS
