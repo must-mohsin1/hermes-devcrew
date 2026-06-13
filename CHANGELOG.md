@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.2] - 2026-06-13
+
+### Changed
+- kanban-worker doctrine synced to **v2.5.0** (byte-identical mirror of the dev-os seed). Documents the now-shipped Item-10 T-F evidence gate: QA and integrator `kanban_complete` calls are kernel-rejected unless `artifacts=[...]` lists at least one existing, non-empty file. Adds the fix-card assignee rule (copy a real profile name verbatim — four phantom-assignee incidents across two builds silently stranded cards), the integrator's sweep-for-open-fix-cards check before completing, kanban-on-kanban test isolation (fixtures use temp DBs / scratch boards, never the live board — an item-10 stress test ran 17 concurrent writers against production), and the retry-guidance contract (treat an orchestrator `RETRY GUIDANCE` comment as ground truth instead of re-exploring).
+
 ## [0.4.1] - 2026-06-12
 
 ### Changed
