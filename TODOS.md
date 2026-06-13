@@ -7,7 +7,5 @@
 ## install.sh
 - **Fan-out test coverage** — §5a (kanban-worker seed → every devcrew profile, drift warning on divergence) has zero tests; a silent-skip regression would strand stale doctrine in every profile. Minimal test: run the block against a temp HERMES_HOME with fake profile dirs, assert byte-identical copies and the drift warning. **Priority:** P2
 
-## skills
-- **Evidence-artifact kernel gate** — kanban-worker v2.4.0 makes the orchestrator treat weak evidence as unverified; the mechanical completion gate is Item 10 T-F. Update the doctrine's enforcement wording once it lands. **Priority:** P2
-
 ## Completed
+- **Evidence-artifact kernel gate wording** — kanban-worker v2.5.0 (2026-06-12) documents the shipped Item 10 T-F gate: QA/integrator `kanban_complete` is kernel-rejected without `artifacts=[...]` pointing at existing non-empty files; doctrine now teaches the parameter and the tee'd-log workflow.

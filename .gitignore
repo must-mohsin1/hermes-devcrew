@@ -6,3 +6,7 @@
 .env
 .hermes-devcrew-src/
 ruvector.db
+
+# RuVector MCP local memory graph (per-machine, not source)
+agentdb.rvf
+agentdb.rvf.lock
