@@ -48,9 +48,12 @@ mechanically verified clean, build-green, and secure.
 ## 3. Non-goals (Phase 1)
 
 - **Kernel/dispatcher enforcement** of the mechanical invariants (same-tree
-  serialization at dispatch, kernel-side debris rejection) — that is **Phase 2**.
+  serialization at dispatch, deepened evidence gates) — that is **Phase 2**.
   Phase 1 gives the release-manager the doctrine + harness to *catch* these like the
-  operator did; Phase 2 makes the kernel *prevent* them.
+  operator did; Phase 2 makes the kernel *prevent* them. **Exception (CEO review
+  2026-06-14):** the one kernel guard that closes the failure which actually reached
+  `main` this session — reject `git add -A` / debris commits from workers — is pulled
+  forward into Phase 1. See §11.
 - **Throughput optimization** (parallelism, retry economics, budgeting) — **Phase 3**.
 - Auto-merging or pushing to `main` — never, in any phase.
 - NLP-parsing arbitrary spec prose — the verifier targets *checkable* assertions only.
@@ -100,23 +103,39 @@ via a new `release-management` skill.
   assignee in the decomposition table (resolves to a real profile?). Outputs a
   pass/fail/uncheckable table with evidence.
 - **Interface:** `spec-claim-verify <spec-file> <repo-path>` → report + exit code.
-- **Pragmatic limit:** targets the **structured** sections the planner already writes
-  (acceptance-criteria file refs, the assignee table, "missing/exists" statements) +
-  a grep pass over cited `file:symbol` pairs. Does not NLP-parse free prose; the agent
-  handles design-intent claims by judgment. Still auto-catches the A1 false premise
-  and phantom assignees.
+- **Two gates, two artifacts (CORRECTED per CEO review):** the two headline catches do
+  NOT fire at one gate.
+  - *Plan gate (against the planner spec):* grep-able `file`/`symbol`/"missing/exists"
+    claims in spec prose — the A1 false-premise class. The spec is prose, not
+    structured, so this check is genuinely fuzzy: it flags *candidates* for the human
+    (fail-open with a clear report), not hard refutations.
+  - *Decompose-time (against the architect's task graph, part of E3):* assignee
+    validation — every card's assignee resolves to a real profile via the **same**
+    `profiles.profile_exists` path the dispatcher uses (do not reimplement). This is
+    the phantom-assignee class. It cannot run at the plan gate (the plan spec has no
+    assignee table — assignees are the architect's later output).
+  The earlier draft's claim that one gate "auto-catches A1 AND phantom assignees" was
+  wrong; they are two different checks at two different gates, and the plan-gate prose
+  check is the weaker one — sell it as best-effort, not a guarantee.
 
 ### 5.3 `clean-integrate` (script)
 - **Does:** refuses/strips `git add -A` debris; reconstructs one commit per
   decomposition lane off current `origin/main`; excludes gitignored/debris paths;
   outputs a clean branch + a report.
 - **Interface:** `clean-integrate <repo-path> <lane-map>` → branch + report + exit code.
-- **Lane→file map source:** derived from the spec's per-lane file references (the
-  planner already writes a "BLAST RADIUS" file list per lane), then agent-confirmed
-  against the actual changed-file set (`git status`); files changed but not claimed by
-  any lane are flagged (this is how the `3c62c38` debris and the composition-shape
-  straggler would surface). The map is an explicit artifact, not an inference hidden
-  inside the script.
+- **Lane→file map source (CORRECTED per CEO review):** a "lane" = one implementation
+  card, keyed by card id. The per-card file list is the `Files:` line the **architect**
+  writes at decompose-time (`hermes-devcrew/agents/architect/skills/decompose-goal`),
+  in **free prose inside the card description** — NOT the planner's spec (the spec
+  defers the breakdown to the architect), and NOT a structured field (the kanban card
+  schema has no `files` field). So `clean-integrate` reads card descriptions via
+  `kanban_show` and parses the `Files:` prose; the result is agent-confirmed against
+  `git status`. Files changed but claimed by no card are flagged (this is how the
+  `3c62c38` debris surfaces). **Honest limitation:** this is a prose parse, not a
+  structured lookup — if a card has no `Files:` line (e.g. the `hermes kanban swarm`
+  fast path omits it) the map is incomplete → the tool returns exit 2 (escalate),
+  never attribute-by-guess. A structured `files`/`blast_radius` card field would make
+  this robust and is noted as a Phase-2 kernel candidate.
 - **Pragmatic limit:** when lanes co-edit a file (the login-page T-A+T-C case),
   attribute to the earliest lane and flag for the agent to confirm; a genuine
   non-composing conflict escalates rather than guessing.
@@ -161,9 +180,10 @@ backstops.
    `1`=violations-found, `2`=script-couldn't-run. The agent treats `2` as
    *escalate to human*, never as "passed." A verifier that can't run is not a green light.
 
-Net: the agent's judgment is guarded by two mechanical gates (the harness) **and** the
-human PR approval. Even if the release-manager drifts or rubber-stamps, a
-`pr-hygiene-gate` failure or the human catches it.
+Net: the agent's judgment is guarded by the harness gates (three tools, plus the
+fleet-wide E3 checks and the E4 kernel guard) **and** the human PR approval. Even if
+the release-manager drifts or rubber-stamps, a `pr-hygiene-gate` failure or the human
+catches it.
 
 ## 8. Testing
 
@@ -198,10 +218,90 @@ expertise is *verified* transferred, not just written down. All tests run on
 
 - **Phase 1 (this spec):** the release-boundary trust layer — agent + harness, the
   build→clean-PR pipeline. Catches the failures like the operator did.
-- **Phase 2:** kernel-harden the invariants (dispatch-time same-tree serialization,
-  kernel-side debris/`git add -A` rejection, deepened evidence gate) so Phase 1 no
-  longer depends on agents following doctrine.
+- **Phase 2:** the *remaining* kernel enforcement — dispatch-time same-tree
+  serialization and deepened evidence gates — so Phase 1 no longer depends on agents
+  following doctrine. (The debris-commit guard moved to Phase 1 as E4 — see §11. A
+  structured `files`/`blast_radius` card field, surfaced by the CEO review, is also a
+  Phase-2 kernel candidate that would make `clean-integrate`'s lane map robust.)
 - **Phase 3:** throughput — parallelism, retry economics, budgeting — once correctness
   is locked.
 
 Each phase is its own spec → plan → build cycle.
+
+---
+
+## 11. Accepted scope expansions (CEO review, 2026-06-14)
+
+Mode: SELECTIVE EXPANSION. Baseline = approach B (full harness + release-manager).
+The CEO review surfaced four expansions; **all four accepted into Phase 1.** They move
+Phase 1 from "the agreed harness" toward the self-improving trust layer (approach C).
+
+| # | Expansion | Effect on the design | Effort (human / CC) |
+|---|-----------|----------------------|---------------------|
+| E1 | **Self-improving check-library** | New first-class component: a registry mapping `incident → harness rule + regression fixture`. The release-manager (and the operator) MUST add an entry whenever a new failure class is caught, so the same mistake can never recur. This is the moat — trust compounds build-over-build. The "incidents as fixtures" testing note in §8 becomes this living mechanism, not a one-time seed. | ~3-5 days / ~1-2 hrs |
+| E2 | **Stronger model for the verification gates** | CORRECTED: the *whole* devcrew fleet runs `deepseek-v4-flash` (per `team.yaml`), not just the integrator — so reviewer and QA are also trust gates on the weak model. E2 upgrades the **verification-judgment roles** (release-manager first, and reviewer + QA flagged as equal-priority candidates) to a stronger reasoning model, with an eval against E1's fixtures that defines a concrete pass bar (e.g. ≥ N/M verify fixtures correct, strictly better than flash). If it doesn't beat flash, keep flash. | ~0.5-1 day / ~15-30 min |
+| E3 | **Fleet-wide harness tools** | The three tools are not release-manager-only: the **orchestrator** runs `spec-claim-verify` at decompose-time (catches false premises before the human even sees the gate), and **workers** run `pr-hygiene-gate` before completing (debris never enters the tree). The release-manager becomes the backstop, not the sole catch. Extends §6 data flow to the orchestrator + worker card lifecycles. | ~2-3 days / ~1 hr |
+| E4 | **Pull-forward kernel debris-guard** | CORRECTED & RE-SCOPED: the naive framing ("reject worker `git add -A`") is unsafe — `checkpoint_manager.py` uses `git add -A` as core rollback-snapshot infra, run constantly; a blanket reject breaks checkpointing fleet-wide. The guard must target the **worker→branch / integrator commit path only**, and explicitly exempt the checkpoint manager's internal `add -A`. It also cannot perfectly tell debris from legitimate new source (the lane allow-list lives in the kanban DB, not the repo the kernel sees), so it is **gitignore + path/size heuristics = "catches the common case," NOT "structurally impossible."** Precise debris/source separation stays in `clean-integrate` (agent layer, which has the `Files:` map). **This is materially harder than first estimated.** | ~3-5 days / ~1-2 hrs |
+
+**Net Phase-1 scope:** the full harness + elevated release-manager (B), now fleet-wide
+(E3), backed by a stronger-model gate (E2), feeding a self-improving check-library (E1),
+with one structural kernel guard (E4). Remaining Phase 2 = the rest of the kernel
+enforcement (same-tree serialization at dispatch, deepened evidence gates, the
+structured `files` card field); Phase 3 = throughput. After the CEO-review corrections
+(E4 re-scoped up from ~1-2 to ~3-5 days), the expansions enlarge the first bite by
+roughly **9-15 human-days** (~4-6 hrs CC) over baseline B. E4's growth is the reason
+its Phase-1 inclusion is re-opened as an unresolved decision (see Reviewer Concerns).
+
+---
+
+## Reviewer Concerns (open items, CEO review 2026-06-14)
+
+Raised by the independent spec reviewer; writing-plans MUST resolve each (not yet
+designed):
+
+1. **Spec-amendment-after-decompose:** when `spec-verify` refutes a claim and the spec
+   is amended, the architect may have already decomposed the *old* spec into cards.
+   Define how stale cards are invalidated / re-decomposed.
+2. **Build/test command + evidence schema undefined:** `pr-hygiene-gate` checks evidence
+   is *present*, not *valid/fresh*. Define the per-repo build/test invocation, the
+   evidence-artifact schema, and whether the release-manager re-runs the build or trusts
+   QA's artifact.
+3. **Draft-PR idempotency/failure:** reuse-open-PR, auth/remote-missing, branch
+   collision, push-rejected. Add a failure subsection to §6.
+4. **E1 registry is a process aspiration, not a built component:** specify the registry
+   file path, entry schema, and the consuming check (which tool reads it at runtime to
+   actually prevent recurrence).
+5. **Co-edit attribution contradicts doctrine:** `decompose-goal` already routes shared
+   wiring files to the integrator card. "Earliest lane" is wrong; align with "shared
+   files belong to the release-manager's own integration commit."
+6. **Per-lane commits may not individually build** (only the branch tip is
+   build-verified). State that per-lane commits are organizational, or squash.
+7. **E3/§6 run duplication:** the orchestrator (E3) and the `spec-verify` card both run
+   `spec-claim-verify`. Resolve which run is authoritative and which gates the human.
+
+---
+
+## GSTACK REVIEW REPORT
+
+| Review run | Status | Key findings |
+|---|---|---|
+| CEO Step-0 (premise / leverage / dream-state / alternatives) | DONE | Reframed the moat as a self-improving check-library; flagged the gate's weak model; confirmed elevate-integrator over new role. |
+| Implementation approach (0C-bis) | DONE | Approach B selected (full harness), minimal-A and ideal-C as bookends. |
+| Mode + expansion cherry-pick (0F) | DONE | SELECTIVE EXPANSION; all 4 expansions (E1-E4) accepted into Phase 1. |
+| Independent adversarial spec review (subagent) | DONE — score 5/10 | Two factual errors in the design's self-model (lane-map source; E2 model premise) + E4 kernel collision with `checkpoint_manager`. 5 corrections applied inline; 7 items logged as Reviewer Concerns. |
+
+**VERDICT: CHANGES APPLIED — design corrected, one scope decision re-opened.** The
+design is strategically sound (the fail-closed / never-merge / exit-2-escalates posture
+is strong), but the independent review proved the first draft mis-described its own
+system. The factual errors are fixed; the feasibility of E4 changed materially
+(~3-5 days, only "catches the common case," collides with checkpoint infra), which
+re-opens whether E4 belongs in Phase 1.
+
+**UNRESOLVED DECISIONS:**
+- E4 (kernel debris-guard) inclusion in Phase 1: the CEO review accepted it at a
+  ~1-2 day / "structurally impossible" framing that the spec review disproved
+  (~3-5 days, "common case only," checkpoint-manager collision). Keep it in Phase 1 at
+  the corrected scope, or defer it to Phase 2 where the rest of the kernel work lives?
+  Owner: user. The agent-layer `clean-integrate` + `pr-hygiene-gate` already catch
+  debris at integration, so deferring E4 loses only the *structural* (pre-integration)
+  guarantee, not all debris protection.
