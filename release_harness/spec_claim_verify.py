@@ -34,6 +34,24 @@ class Report:
     def exit_code(self) -> int:
         return exits.VIOLATIONS if self.findings else exits.PASS
 
+def _kernel_profile_exists(name: str) -> bool:
+    """Use the kernel's OWN resolver so we never diverge from the dispatcher
+    (Reviewer Concern: do not reimplement profile resolution)."""
+    from hermes_cli import profiles as _p  # provided by the installed kernel
+    return _p.profile_exists(name)
+
+def verify_assignees(task_graph, profile_exists=None) -> Report:
+    check = profile_exists or _kernel_profile_exists
+    report = Report(gate="decompose")
+    for card in task_graph:
+        a = (card.get("assignee") or "").strip()
+        if a and not check(a):
+            report.findings.append(Finding(
+                "phantom-assignee",
+                f"card {card.get('id','?')} assigned to '{a}' which is not a spawnable profile",
+            ))
+    return report
+
 def verify_spec_claims(spec_file: Path, repo: Path) -> Report:
     text = Path(spec_file).read_text(encoding="utf-8")
     report = Report(gate="plan")

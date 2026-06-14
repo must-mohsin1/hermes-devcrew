@@ -32,3 +32,20 @@ def test_plan_gate_is_fail_open(tmp_path):
     report = verify_spec_claims(spec, repo)
     assert report.exit_code in (exits.PASS, exits.VIOLATIONS)
     assert report.gate == "plan"
+
+from release_harness.spec_claim_verify import verify_assignees
+
+def test_phantom_assignee_blocks():
+    # profile_exists injected for hermetic test (no real ~/.hermes dependency)
+    graph = [{"id": "t_a", "assignee": "devcrew-backend-dev"},
+             {"id": "t_b", "assignee": "devos-backend"}]  # phantom
+    real = {"devcrew-backend-dev", "devcrew-qa"}
+    report = verify_assignees(graph, profile_exists=lambda p: p in real)
+    assert report.gate == "decompose"
+    assert report.exit_code == exits.VIOLATIONS
+    assert any("devos-backend" in f.detail for f in report.findings)
+
+def test_all_real_assignees_pass():
+    graph = [{"id": "t_a", "assignee": "devcrew-qa"}]
+    report = verify_assignees(graph, profile_exists=lambda p: True)
+    assert report.exit_code == exits.PASS
