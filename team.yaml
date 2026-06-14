@@ -17,10 +17,10 @@ agents:
   - { name: devcrew-backend-dev,   dir: agents/backend-dev,   swarm_role: worker,      tier: coder,  model: deepseek/deepseek-v4-flash }
   - { name: devcrew-frontend-dev,  dir: agents/frontend-dev,  swarm_role: worker,      tier: coder,  model: deepseek/deepseek-v4-flash }
   - { name: devcrew-devops,        dir: agents/devops,        swarm_role: worker,      tier: coder,  model: deepseek/deepseek-v4-flash }
-  - { name: devcrew-reviewer,      dir: agents/reviewer,      swarm_role: verifier,    tier: strong, model: deepseek/deepseek-v4-flash }
-  - { name: devcrew-integrator,    dir: agents/integrator,    swarm_role: synthesizer, tier: strong, model: deepseek/deepseek-v4-flash }
+  - { name: devcrew-reviewer,      dir: agents/reviewer,      swarm_role: verifier,    tier: strong, model: deepseek/deepseek-v4-pro }
+  - { name: devcrew-integrator,    dir: agents/integrator,    swarm_role: synthesizer, tier: strong, model: deepseek/deepseek-v4-pro }
   - { name: devcrew-domain-expert, dir: agents/domain-expert, swarm_role: worker,      tier: coder,  model: deepseek/deepseek-v4-flash }
-  - { name: devcrew-qa,            dir: agents/qa,            swarm_role: dynamic-verifier, tier: strong, model: deepseek/deepseek-v4-flash }
+  - { name: devcrew-qa,            dir: agents/qa,            swarm_role: dynamic-verifier, tier: strong, model: deepseek/deepseek-v4-pro }
   - { name: devcrew-designer,      dir: agents/designer,      swarm_role: designer,        tier: strong, model: deepseek/deepseek-v4-flash }
 
 # Default topology: designer (upstream) → parallel workers → reviewer (static gate)
