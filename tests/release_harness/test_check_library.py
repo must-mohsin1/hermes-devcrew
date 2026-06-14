@@ -25,3 +25,11 @@ def test_load_from_custom_path(tmp_path):
     )
     lib = load_library(p)
     assert lib[0].id == "t1" and lib[0].severity == "warn"
+
+def test_seeded_fixtures_exist():
+    # the E1 registry must not claim a fixture it doesn't ship: every non-empty
+    # fixture path on a seeded check must resolve to a real directory.
+    root = Path(__file__).resolve().parents[2]
+    for c in load_library():
+        if c.fixture:
+            assert (root / c.fixture).is_dir(), f"{c.id}: missing fixture dir {c.fixture}"

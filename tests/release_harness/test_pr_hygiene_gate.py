@@ -20,3 +20,16 @@ def test_tracked_debris_fails(tmp_git_repo):
 def test_missing_evidence_fails(tmp_git_repo):
     rep = check_branch(tmp_git_repo, base="main", evidence=["nonexistent.log"])
     assert rep.exit_code == exits.VIOLATIONS
+
+def test_non_git_dir_escalates(tmp_path):
+    # a gate that cannot inspect the repo must ESCALATE (2), never false-clean PASS
+    rep = check_branch(tmp_path, base="main", evidence=[])
+    assert rep.exit_code == exits.ESCALATE
+    assert any(f.kind == "not-a-work-tree" for f in rep.findings)
+
+def test_unresolvable_base_escalates(tmp_git_repo):
+    # origin/main on a repo with no remote fetched: freshness is unverifiable, so
+    # escalate rather than silently passing (the verify_code_landed lesson).
+    rep = check_branch(tmp_git_repo, base="origin/main", evidence=["src.py"])
+    assert rep.exit_code == exits.ESCALATE
+    assert any(f.kind == "base-unresolvable" for f in rep.findings)

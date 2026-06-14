@@ -73,10 +73,14 @@ if __name__ == "__main__":
     p_ass = sub.add_parser("assignees")
     p_ass.add_argument("graph_json")  # JSON file: [{"id":..,"assignee":..}, ...]
     a = ap.parse_args()
-    if a.mode == "plan":
-        rep = verify_spec_claims(Path(a.spec), Path(a.repo))
-    else:
-        graph = json.loads(Path(a.graph_json).read_text(encoding="utf-8"))
-        rep = verify_assignees(graph)
+    try:
+        if a.mode == "plan":
+            rep = verify_spec_claims(Path(a.spec), Path(a.repo))
+        else:
+            graph = json.loads(Path(a.graph_json).read_text(encoding="utf-8"))
+            rep = verify_assignees(graph)
+    except Exception as e:  # can't-run (missing spec/graph file, parse error) → escalate
+        print(f"spec_claim_verify could not run: {e}", file=sys.stderr)
+        sys.exit(exits.ESCALATE)
     print(json.dumps([f.__dict__ for f in rep.findings], indent=2))
     sys.exit(rep.exit_code)

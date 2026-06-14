@@ -26,3 +26,17 @@ def test_pr_hygiene_cli_missing_evidence_is_exit_1(tmp_git_repo):
     assert r.returncode == 1  # exits.VIOLATIONS
     findings = json.loads(r.stdout)
     assert any(f["kind"] == "missing-evidence" for f in findings)
+
+
+def test_clean_integrate_cli_unrunnable_is_exit_2(tmp_path):
+    # missing lane-map file → can't-run → ESCALATE (2), never VIOLATIONS (1)
+    r = _run("release_harness.clean_integrate", str(tmp_path),
+             "--base", "main", "--branch", "rel/x", "--lane-map", str(tmp_path / "nope.json"))
+    assert r.returncode == 2  # exits.ESCALATE
+
+
+def test_spec_claim_verify_cli_missing_spec_is_exit_2(tmp_path):
+    # missing spec file → can't-run → ESCALATE (2)
+    r = _run("release_harness.spec_claim_verify", "plan",
+             str(tmp_path / "nope.md"), str(tmp_path))
+    assert r.returncode == 2  # exits.ESCALATE

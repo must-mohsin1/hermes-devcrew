@@ -36,7 +36,7 @@ def _changed_files(repo):
     for line in out.splitlines():
         path = line[3:].strip()
         # skip gitignored debris entirely (never staged)
-        ci = subprocess.run(["git", "-C", str(repo), "check-ignore", path],
+        ci = subprocess.run(["git", "-C", str(repo), "check-ignore", "--no-index", path],
                             capture_output=True, text=True)
         if ci.returncode == 0:
             continue
@@ -71,7 +71,11 @@ if __name__ == "__main__":
     ap.add_argument("--branch", required=True)
     ap.add_argument("--lane-map", required=True)  # JSON file: {"card_id": ["path", ...]}
     a = ap.parse_args()
-    lane_map = json.loads(Path(a.lane_map).read_text(encoding="utf-8"))
-    rep = reconstruct(Path(a.repo), a.base, lane_map, a.branch)
+    try:
+        lane_map = json.loads(Path(a.lane_map).read_text(encoding="utf-8"))
+        rep = reconstruct(Path(a.repo), a.base, lane_map, a.branch)
+    except Exception as e:  # can't-run (bad base, missing lane-map, git error) → escalate
+        print(f"clean_integrate could not run: {e}", file=sys.stderr)
+        sys.exit(exits.ESCALATE)
     print(json.dumps([f.__dict__ for f in rep.findings], indent=2))
     sys.exit(rep.exit_code)
