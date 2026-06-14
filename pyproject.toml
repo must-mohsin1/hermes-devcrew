@@ -1,2 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "release-harness"
+version = "0.1.0"
+description = "Deterministic release-trust harness for the devcrew release-manager (ships in hermes-devcrew, survives kernel updates)."
+requires-python = ">=3.9"
+dependencies = ["PyYAML"]
+
+[tool.setuptools]
+packages = ["release_harness"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]

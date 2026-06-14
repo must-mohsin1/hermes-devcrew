@@ -138,6 +138,30 @@ for d in $AGENT_DIRS; do
   [ -n "$desc" ] && hermes profile describe "$name" --text "$desc" >/dev/null 2>&1 || true
 done
 
+# --- 5c) release_harness — deterministic release-trust harness for the release-manager ---
+# The release-manager (devcrew-integrator) and impl workers invoke
+# `python3 -m release_harness.*` (see the release-management skill + kanban-worker
+# doctrine). Install the package so the import resolves. Containerized
+# (devcrew-bridge) workers get it baked into the worker image separately; this
+# covers local installs.
+say "Installing release_harness (release-trust harness)"
+if python3 -m pip install -e "$SRC" >/dev/null 2>&1; then
+  say "release_harness installed (editable)"
+else
+  warn "pip install -e failed (externally-managed env?) — falling back to PYTHONPATH in each profile .env"
+  for n in $INSTALLED; do
+    envf="$HERMES_HOME_DIR/profiles/$n/.env"; touch "$envf"
+    grep -q '^PYTHONPATH=' "$envf" 2>/dev/null || printf 'PYTHONPATH=%s\n' "$SRC" >> "$envf"
+  done
+fi
+# Smoke check — a release harness that can't import is a silent failure waiting to
+# happen (the exit-2 / verify_code_landed lesson): make it loud now, not at release time.
+if PYTHONPATH="$SRC${PYTHONPATH:+:$PYTHONPATH}" python3 -c "import release_harness" >/dev/null 2>&1; then
+  say "release_harness import OK"
+else
+  warn "release_harness import FAILED — the release-manager harness will not run; check the install"
+fi
+
 # --- 6) Optional standard skill packs (best effort; bundled skills are the baseline) ---
 # Every agent already ships a bundled, always-available skill. These registry packs are a
 # best-effort enhancement — if a name isn't in the user's skill registry, we skip it quietly.

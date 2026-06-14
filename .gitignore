@@ -10,3 +10,12 @@ ruvector.db
 # RuVector MCP local memory graph (per-machine, not source)
 agentdb.rvf
 agentdb.rvf.lock
+
+# Python build/test artifacts (release_harness is pip-installable via pyproject)
+__pycache__/
+*.pyc
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
