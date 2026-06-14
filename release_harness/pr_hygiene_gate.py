@@ -45,3 +45,13 @@ def check_branch(repo: Path, base: str, evidence: list) -> Report:
         rep.findings.append(Finding("stale-base",
             f"branch is {behind} commits behind {base} — rebase before PR"))
     return rep
+
+if __name__ == "__main__":
+    import argparse, sys, json
+    ap = argparse.ArgumentParser()
+    ap.add_argument("repo"); ap.add_argument("--base", default="origin/main")
+    ap.add_argument("--evidence", nargs="*", default=[])
+    a = ap.parse_args()
+    rep = check_branch(a.repo, a.base, a.evidence)
+    print(json.dumps([f.__dict__ for f in rep.findings], indent=2))
+    sys.exit(rep.exit_code)

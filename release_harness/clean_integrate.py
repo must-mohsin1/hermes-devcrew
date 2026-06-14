@@ -62,3 +62,16 @@ def reconstruct(repo: Path, base: str, lane_map: dict, branch: str) -> Report:
         _git(repo, "add", "--", *present)   # explicit paths only, never -A
         _git(repo, "commit", "-q", "-m", f"lane {card_id}")
     return rep
+
+if __name__ == "__main__":
+    import argparse, sys, json
+    ap = argparse.ArgumentParser()
+    ap.add_argument("repo")
+    ap.add_argument("--base", default="origin/main")
+    ap.add_argument("--branch", required=True)
+    ap.add_argument("--lane-map", required=True)  # JSON file: {"card_id": ["path", ...]}
+    a = ap.parse_args()
+    lane_map = json.loads(Path(a.lane_map).read_text(encoding="utf-8"))
+    rep = reconstruct(Path(a.repo), a.base, lane_map, a.branch)
+    print(json.dumps([f.__dict__ for f in rep.findings], indent=2))
+    sys.exit(rep.exit_code)
