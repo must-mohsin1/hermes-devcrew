@@ -12,6 +12,7 @@ import importlib.util
 import json
 import os
 import stat
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -81,3 +82,27 @@ def fake_hermes(tmp_path, monkeypatch):
 def calls(fake: Path) -> list[list[str]]:
     return [json.loads(line) for line in
             (fake / "calls.log").read_text(encoding="utf-8").splitlines() if line]
+
+
+@pytest.fixture
+def tmp_git_repo(tmp_path):
+    """A throwaway git repo for release_harness tests. NEVER use a real repo or
+    live board in tests (kanban-worker v2.5.0 isolation rule). Lives in the root
+    conftest so it is inherited by every test dir without a colliding second
+    conftest module (test_devcrew_closeout.py does `from conftest import calls`)."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    def g(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True,
+                       capture_output=True, text=True)
+
+    g("init", "-q")
+    g("config", "user.email", "t@t")
+    g("config", "user.name", "t")
+    (repo / ".gitignore").write_text("*.log\nagentdb.rvf\n")
+    (repo / "src.py").write_text("x = 1\n")
+    g("add", ".")
+    g("commit", "-q", "-m", "base")
+    g("branch", "-M", "main")
+    return repo

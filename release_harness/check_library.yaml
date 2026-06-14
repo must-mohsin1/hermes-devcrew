@@ -1,0 +1,24 @@
+# Self-improving check-library (E1). Append an entry whenever a new failure
+# class is caught — never delete, never let it rot. Each entry is a permanent
+# automated gate. Seeded 2026-06-14 from the session that designed this harness.
+checks:
+  - id: phantom-assignee
+    incident: "cards created for non-spawnable profiles sat ready forever (4 incidents)"
+    rule: "every card assignee must resolve via profiles.profile_exists"
+    severity: block
+    fixture: tests/release_harness/fixtures/phantom_assignee
+  - id: false-route-premise
+    incident: "Item 13 A1 claimed a route was missing when it existed → dead code"
+    rule: "spec 'X is missing' claims must be grep-verified against the repo"
+    severity: warn
+    fixture: tests/release_harness/fixtures/false_route_premise
+  - id: git-add-all-debris
+    incident: "a worker git add -A pushed 18 build/log artifacts into a PR that merged to main"
+    rule: "no gitignored/debris paths may be tracked in the release branch"
+    severity: block
+    fixture: tests/release_harness/fixtures/git_add_all_debris
+  - id: broken-main-uncommitted-helper
+    incident: "Item 12 committed a route importing an uncommitted helper → main build broken"
+    rule: "every import target must be a tracked file or in the release branch"
+    severity: block
+    fixture: tests/release_harness/fixtures/broken_main_import
