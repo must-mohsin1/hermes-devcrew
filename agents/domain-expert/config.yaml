@@ -8,8 +8,8 @@ model:
   api_mode: chat_completions
 fallback_providers:
   - { provider: openrouter, model: deepseek/deepseek-v4-pro, base_url: https://openrouter.ai/api/v1, api_mode: chat_completions }
-toolsets:
-  - hermes-cli
+  - { provider: openrouter, model: deepseek/deepseek-v4-flash, base_url: https://openrouter.ai/api/v1, api_mode: chat_completions }
+
 agent:
   reasoning_effort: medium
   # 60 turns: consult-style tasks are short.
